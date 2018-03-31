@@ -1,0 +1,6 @@
+pyramid
+sqlalchemy
+pyramid_chameleon
+zope.sqlalchemy
+pyramid_tm
+markdown

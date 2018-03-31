@@ -1,0 +1,13 @@
+digraph helloWorld {
+  subgraph test { test }
+  edgeas [sadf="sdf"]
+  attrlessnode
+  hello [call=readLines,con="'hello.txt'"] // comment
+  world [call=c,text="'world!'"];
+  hello_world [call=paste,sep="', '"]
+  hello->hello_world
+  world->hello_world [a="asdf"]
+}
+# asdf
+#asdf
+#asdfasdf

@@ -1,0 +1,11 @@
+digraph 1 {
+1 [aa1=1,test=2]
+b [arg=test]
+b->c [arg=test1]
+a->b [weight=27]
+a->c [asdf=23]
+a->d
+c->d
+c->e
+d->e
+}

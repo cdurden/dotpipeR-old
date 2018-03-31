@@ -1,0 +1,123 @@
+// for each data of a collection, download the compressed data from from http://cdo.ncdc.noaa.gov/qclcd_ascii/
+#library(maps)
+#library(mapdata)
+#library(ggmap)
+#getdates <- function(x) {
+#  codes <- sprintf("%08d",x)
+#  dates <- t(sapply(codes,substring,first=c(1,3,5),last=c(2,4,6)))
+#  colnames(dates) <- c("month","day","year")
+#  years = as.integer(paste(20,dates[,'year'],sep=""))
+#  years = years -100*(years>2033)
+#  dates[,'year'] = years
+#  return(as.data.frame(dates,stringsAsFactors=FALSE))
+#}
+#getAVHRRfile <- function(AVHRR_file,datadir) { 
+#  AVHRR_path = file.path(datadir,AVHRR_file)
+#  if(!file.exists(AVHRR_path) || file.info(AVHRR_path)$size==0) { 
+#    download.file(paste0("ftp://eclipse.ncdc.noaa.gov/pub/OI-daily-v2/IEEE/2010/AVHRR-AMSR/",AVHRR_file),AVHRR_path);
+#  }
+#  if(file.info(AVHRR_path)$size==0) {stop() }
+#  if(file.exists(AVHRR_path) && file.info(AVHRR_path)$size!=0) { 
+#    if(grepl(".tar.gz$",AVHRR_path)) { untar(AVHRR_path,compressed="gz",exdir=datadir) }
+#    else { if(grepl(".zip$",AVHRR_path)) { unzip(AVHRR_path,exdir=datadir) } }
+#  }
+#  return(1)
+#}
+#nearest_station_index <- function(lat, lon, stations_lat, stations_lon) {
+#  angles = acos(cos(pi/180*(stations_lat-lat))*cos(pi/180*(stations_lon-lon)))
+#  nearest_station_index = which.min(angles)
+#}
+#station_index_order_by_angle <- function(lat, lon, stations_lat, stations_lon) {
+#  angles = acos(cos(pi/180*(stations_lat-lat))*cos(pi/180*(stations_lon-lon)))
+#  order(angles)
+#}
+#nearest_station_msmts <- function(dates, latlon, field, datadir="data/QCLCD") {
+#  if(nrow(dates)!=nrow(latlon)) stop("number of rows in dates data does not match number of rows in location data")
+#  out <- data.frame(msmt=rep(NA,nrow(dates)))
+#  colnames(out) = field
+#  for(i in 1:nrow(dates)) {
+#    yearmonth_str = paste(dates[i,c('year','month')],collapse="")
+#    yearmonthday_str = paste(dates[i,c('year','month','day')],collapse="")
+#    msmt_file = paste0(yearmonth_str,'daily.txt')
+#    try({
+#      tryCatch({
+#        if(dates[i,'year'] < 2007) { stop() }
+#        if(!file.exists(file.path(datadir,msmt_file))) {
+#          QCLCD_file <- paste0('QCLCD',yearmonth_str,'.zip');
+#          getQCLCDfile(QCLCD_file,datadir)
+#        }
+#        station_file = paste0(yearmonth_str,'station.txt')
+#        stations_all = read.delim(file.path(datadir,station_file),sep="|")
+#        msmts = read.delim(file.path(datadir,msmt_file),sep=",",as.is=TRUE)
+#        wbans = with(msmts,unique(WBAN[which(YearMonthDay==yearmonthday_str & !is.na(as.integer(eval(parse(text=field)))) )]))# get WBANs which have data for the collection date
+#        stations = stations_all[which(stations_all[,'WBAN'] %in% wbans),]
+#        nearest_station_WBAN = stations[,'WBAN'][nearest_station_index(latlon[i,'lat'],latlon[i,'lon'],stations[,'Latitude'],stations[,'Longitude'])]
+#        out[i,field] = with(msmts,eval(parse(text=field))[YearMonthDay==yearmonthday_str & WBAN==nearest_station_WBAN][1])
+#      }, error=function(e) {
+#        if(!file.exists(file.path(datadir,msmt_file))) {
+#          QCLCD_file <- paste0(yearmonth_str,'.tar.gz');
+#          getQCLCDfile(QCLCD_file,datadir)
+#        }
+#        station_file = paste0('station.txt')
+##        station_file = paste0('201304station.txt')
+#        oldfields = data.frame(oldfield="Avg Temp",row.names=c("Tavg"),stringsAsFactors=FALSE)
+#        oldfield = make.names(oldfields[field,'oldfield'])
+#        stations_all = read.delim(file.path(datadir,station_file),sep="|")
+#        msmts = read.delim(file.path(datadir,msmt_file),sep=",",as.is=TRUE)
+#        wbans = with(msmts,unique(Wban.Number[which(YearMonthDay==yearmonthday_str & !is.na(as.integer(eval(parse(text=oldfield)))) )]))# get WBANs which have data for the collection date
+#        stations = stations_all[which(stations_all[,'WBAN.Number'] %in% wbans),]
+#        nearest_station_WBAN = stations[,'WBAN.Number'][nearest_station_index(latlon[i,'lat'],latlon[i,'lon'],stations[,'Latitude'],stations[,'Longitude'])]
+#        out[i,field] <<- with(msmts,eval(parse(text=oldfield))[YearMonthDay==yearmonthday_str & Wban.Number==nearest_station_WBAN][1])
+#      })
+#    })
+#  }
+#  return(out)
+#}
+#nearest_soil_msmts <- function(dates,latlon,field,datadir="data/soilsip01") { # data from ftp://ftp.ncdc.noaa.gov/pub/data/uscrn/products/soilsip01
+#  files = list.files(datadir,pattern="CRNSIP01_.*.txt$")
+#  WBAN = sapply(files,function(file) {strsplit(readLines(file.path(datadir,file),n=1),split=" +")[[1]][2]})
+#  lat = sapply(files,function(file) {strsplit(readLines(file.path(datadir,file),n=1),split=" +")[[1]][4]})
+#  lat = as.numeric(sapply(files,function(file) {strsplit(readLines(file.path(datadir,file),n=1),split=" +")[[1]][4]}))
+#  lon = as.numeric(sapply(files,function(file) {strsplit(readLines(file.path(datadir,file),n=1),split=" +")[[1]][5]}))
+#  stations = data.frame(file=files,WBAN=WBAN,lat=lat,lon=lon,stringsAsFactors=FALSE)
+#  out <- data.frame(msmt=rep(NA,nrow(dates)),angle=rep(NA,nrow(dates)),WBAN=NA)
+#  for(i in 1:nrow(dates)) {
+#    date_index = c()
+#    j = 1
+#    stations = stations[station_index_order_by_angle(latlon[i,'lat'],latlon[i,'lon'],stations[,'lat'],stations[,'lon']),]
+#    while(sum(date_index)==0) {
+#      nearest_station = stations[j,]
+##      nearest_station = stations[nearest_station_index(latlon[i,'lat'],latlon[i,'lon'],stations[,'lat'],stations[,'lon']),]
+#      angle = acos(cos(pi/180*(nearest_station[,'lat']-latlon[i,'lat']))*cos(pi/180*(nearest_station[,'lon']-latlon[i,'lon'])))[1]
+#      if(angle>0.1) { break }
+#
+#      soildata <- read.delim(file.path(datadir,nearest_station[,'file']),sep="",as.is=TRUE,header=FALSE)
+#      yearmonthday_str = paste(dates[i,c('year','month','day')],collapse="")
+#      date_index = grepl(pattern=paste0("^",yearmonthday_str),soildata[,1])
+#      j = j+1
+#    }
+#    out[i,'msmt'] = mean(soildata[date_index,field])
+#    out[i,'angle'] = angle
+#    out[i,'WBAN'] = nearest_station[,'WBAN'] 
+#  }
+#  return(out)
+#}
+
+digraph morelpatterns {
+  collection_data [function="read.delim",sep="'\t'",file="'data/morel_collections.txt'", "row.names"=NULL, skip=1,"as.is"=TRUE]
+  location [function="with",expr="quote(location)"]
+  collection_data -> location [name=data]
+  latlon [function="geocode"]
+  location -> latlon [name=location]
+  dates [function=with,expr="quote(getdates(code))"]
+  collection_data -> dates [name=data]
+  mkdir [expression="dir.create('data/QCLCD')"]
+//  QCLCD_filenames [function=with,expr="quote(unique(paste0('QCLCD',year,month,'.zip')))"]
+//  dates -> QCLCD_filenames [name=data]
+  nearest_station_Tavg [function="nearest_station_msmts",field="'Tavg'"]
+  dates -> nearest_station_Tavg [name=dates]
+  latlon -> nearest_station_Tavg [name=latlon]
+  nearest_station_soildata [function="nearest_soil_msmts",field=6]
+  dates -> nearest_station_soildata [name=dates]
+  latlon -> nearest_station_soildata [name=latlon]
+}

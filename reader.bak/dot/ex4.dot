@@ -1,0 +1,7 @@
+graph 1 {
+a [call="read.delim",file="a.txt",header=FALSE]
+b [call="read.delim",file="b.txt",header=FALSE]
+c [call=sum,c=5]
+b->c [arg=a]
+a->c [arg=b]
+}

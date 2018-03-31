@@ -1,0 +1,47 @@
+<metal:jquery define-macro="jquery">
+<script src="${request.static_url('tutorial:static/js/jquery-1.9.1.min.js')}"></script>
+</metal:jquery>
+
+<metal:jquery-validate define-macro="jquery-validate">
+<script type="text/javascript" src="${request.static_url('tutorial:static/js/jquery.validate.js')}"></script>
+</metal:jquery-validate>
+
+<metal:cluetip define-macro="cluetip">
+<script src="${request.static_url('tutorial:static/js/jquery.cluetip.js')}"></script>
+<link rel="stylesheet" href="${request.static_url('tutorial:static/css/jquery.cluetip.css')}" type="text/css" />
+</metal:cluetip>
+
+<metal:jquery-ui define-macro="jquery-ui">
+<script src="${request.static_url('tutorial:static/js/jquery-ui.js')}"></script>
+<link rel="stylesheet" href="${request.static_url('tutorial:static/css/jquery-ui.css')}" />
+  <style>
+    body { font-size: 100%; }
+    label, input { display:block; }
+    input.text { margin-bottom:5px; padding: .4em; }
+    .ui-widget { font-size: 75%; }
+    fieldset { padding:0; border:0; margin-top:25px; }
+    h1 { font-size: 2em; margin: .6em 0; }
+  </style>
+
+</metal:jquery-ui>
+
+<metal:jquery-ui_confirm define-macro="jquery-ui_confirm">
+  <script>
+  $(function() {
+    $( "#dialog-confirm" ).dialog({
+      resizable: false,
+      height:140,
+      modal: true,
+      buttons: {
+        "Discard unsaved changes": function() {
+          $( this ).dialog( "close" ); #FIXME: need to implement
+        },
+        "Return to editing session": function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
+  });
+  </script>
+</metal:jquery-ui_confirm>
+

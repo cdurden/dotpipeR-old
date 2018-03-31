@@ -1,0 +1,14 @@
+digraph unnamed {
+sargassoSeaOTUs [function="read.cps", file="'sargassoSeaOTU_CPS_unique.txt'"];
+chao [function=chao];
+gt [method="'gt'", by=100, end=5000, start=0, function=richest];
+sargassoSeaOTUs -> gt  [name=data];
+pnpmle [method="'pnpmle'", by=100, end=5000, start=0, function=richest];
+sargassoSeaOTUs -> pnpmle  [name=data];
+lijou [method="'lijou'", by=100, end=5000, start=0, function=richest];
+sargassoSeaOTUs -> lijou  [name=data];
+sargassoSeaOTUs -> chao  [name=cps];
+}
+#library("richest")
+#library("stats")
+#library("utils")

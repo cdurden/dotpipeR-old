@@ -1,0 +1,13 @@
+<div metal:use-macro="view.layout">
+  <tal:block metal:fill-slot="head-more">
+    <script metal:use-macro="view.macros['jquery']"></script>
+    <script metal:use-macro="view.macros['jquery-ui']"></script>
+    <script metal:use-macro="view.macros['jquery-validate']"></script>
+  </tal:block>
+  <tal:block metal:fill-slot="nav">
+  </tal:block>
+  <tal:block metal:fill-slot="content">
+    <tal:block metal:use-macro="view.files_macros['files']">
+    </tal:block>
+  </tal:block>
+</div>

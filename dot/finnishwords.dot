@@ -1,0 +1,17 @@
+digraph unnamed {
+text [function=htmlToText];
+html [function=getURL, url="'http://www.hs.fi'"];
+html -> text  [name=html];
+words [function=splitwords];
+text -> words  [name=str];
+}
+#library("XML")
+#library("RCurl")
+#htmlToText <- function(html) {
+#  doc = htmlParse(html, asText=TRUE)
+#  plain.text <- xpathSApply(doc, "//text()[not(ancestor::script)][not(ancestor::style)][not(ancestor::noscript)][not(ancestor::form)]", xmlValue)
+#  return(plain.text)
+#}
+#splitwords <- function(str) {
+#  unlist(strsplit(str," "))
+#}

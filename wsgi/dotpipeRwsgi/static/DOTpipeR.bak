@@ -1,0 +1,87 @@
+<h1 id="dotpiper-a-system-for-using-the-dot-language-to-develop-computational-pipelines-that-run-r-code">DOTpipeR: A system for using the DOT language to develop computational pipelines that run R code</h1>
+<h2 id="abstract">Abstract</h2>
+<p>An important problem in biology research is the sharing of computational analysis information so that analyses can be described accurately and precisely, and so that results can be reproduced. Several applications that facilitate pipeline development and sharing offer solutions to this problem. Here, we present a software system for pipeline development, execution, and sharing that builds minimalistically on existing open-source software tools and data specifications to provide a simple and easy solution to computational pipeline development and sharing for analyses in the R/bioconductor context. This system facilitates use of the DOT file format for the creation of computational pipelines that execute R code. We implement the pipeline execution system as an R package. We also provide a separate web interface to facilitate pipeline sharing and data visualization.</p>
+<h2 id="introduction">Introduction</h2>
+<p>A computational pipeline is an entity that describes the connectedness and ordering of computations performed on data. A pipeline can be understood as a directed acyclic graph, where each node represent a function, as well as its output, and incoming edges represent the data passed from the parent nodes as parameters to the function. The premise of this work is that a way to efficiently assemble, modify, run, and share computational pipelines, and to visualize their outputs, can help researchers collaboratively investigate questions that are scientifically important. In particular, we envision pipelines as organizational tools for bioinformaticians with two primary purposes: to enhance the efficiency of developing bioinformatic analyses, and to facilitate the presentation of analysis steps to others, thereby empowering collaborators to more productively guide their research.</p>
+<!--What kinds of data are available?
+What kinds of questions can be asked of these kinds of data? What kinds of structures (relationships) are observed when data are examined jointly?
+What questions are important?
+-->
+
+<p>The goal of this projects has been to implement a pipeline system that concisely describes computional analysis pipelines while introducing a minimal number of new programmatic elements. We use the DOT language for defining directed graph data structures because it is concise and human readable, and we describe a way to map a graph data structure defined using the DOT language to R code. Essentially, we interpret a DOT graph as a computational pipeline (as defined above), and we specify a way to define a function for each node, and its parameters, using node attributes and edge attributes allowed by the DOT language specification. Our system is implemented in an R package that reads dot files, constructs a computational pipeline data structure, and, when executed, evaluates the functions at the nodes in an appropriate order, using data from any parent nodes as parameters (as specified). This implementation also performs caching operations to enhance the efficiency of revising and rerunning time-consuming computations.</p>
+<p>A significant advantage of the pipeline system over standard R scripts is that the DOT file explicitly describes the connectedness and ordering of processing steps; whereas the flow of information in a standard R script will depend upon the order of the lines of code, the statements in a DOT file can be reordered without affecting the way that the information is processed by DOTpipeR. The upshot of this is a more robust way to code data analysis scripts, which enforces practices that help avoid some of the pitfalls of running interpreted R code, and thus contributes to reproducibility of computations.</p>
+<p>Another significant advantage of the pipeline system is that the DOT files defining the pipelines can be read by any software that reads the DOT specification. We have used a collection of Python packages to provide a web interface to these computational pipelines, which permits creation, modification, annotation, and execution of the pipelines via DOTpipeR, and the visualization of the node data. This web system is a separate application, so DOTpipeR can be used without this component. However, this component leverages the structure defined by the pipeline DOT files to provide a convenient interface for generating visualizations of the function output data at each node. The system we use in the web application to generate visualizations allows a programmer to easily extend the visualization methods that can be used to visualize a data object of a given R class.</p>
+<h2 id="definitions-and-specification">Definitions and specification</h2>
+<p>The DOTpipeR specification entails 1) a way to (bijectively) map nodes to functions, 2) a way to define R function parameters, i.e. as name/value pairs, which may include a) parameters whose values are the output data of parent nodes and b) parameters whose values are R literals or R expressions (not outputs of parent nodes). The details are described next.</p>
+<h3 id="mapping-nodes-to-functions">Mapping nodes to functions</h3>
+<p>A node is mapped to a function by the right hand side of the &quot;call&quot; attribute in the node's attribute list. The right hand side of the attribute element is a DOT identifier, ID, which is mapped to an R function in the following way. If ID is not a double-quoted string, R looks for the function matching this string, using R's get function. If ID is not a double-quoted string, the quotes are removed and the resulting string is matched to a function as previously described. Note that a double-quoted string is necessary for specifying a function whose name contains a period or another symbol that is not otherwise valid in a DOT identifier (See the <a href="http://www.graphviz.org/doc/info/lang.html">DOT language specification</a>).</p>
+<h3 id="defining-parameter-values">Defining parameter values</h3>
+<p>A parameter whose values is the output data of one node (the parent node) is passed to the function of another node (the child node) by simply including an edge statement from the parent node to the child node. Additionally, the name of this parameter is defined by passing it as the value of the &quot;arg&quot; attribute in the attribute list of the edge statement.</p>
+<p>A parameter whose value is not the output data of another node is passed to a function by including its name/value pair in the attribute list of the corresponding node (the same way that the name/value pair would be passed to a function in R). As with function names, Note that a double-quoted string is necessary for specifying a parameter name or value that contains a period or another symbol that is not otherwise valid in a DOT identifier (See the <a href="http://www.graphviz.org/doc/info/lang.html">DOT language specification</a>, and these quotes are removed before the expressions inside are evaluated by R.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="hello-world">Hello, world</h3>
+<p>This pipeline reads a file (hello.txt) containing the string &quot;Hello&quot; and concatenates the string &quot;world&quot; to it, using the R paste function with &quot;, &quot; as the collapse parameter. The terminal node c then contains the string &quot;Hello, world&quot;.</p>
+<p><a href="/view/3/">View pipeline in the web application</a></p>
+<pre><code>graph helloWorld {
+  a [call=&quot;read.delim&quot;,file=&quot;hello.txt&quot;,header=FALSE]
+  b [call=&quot;c&quot;,text=&quot;world&quot;]
+  c [call=&quot;paste&quot;,collapse=&quot;, &quot;]
+  b-&gt;c [arg=a]
+  a-&gt;c [arg=b]
+}</code></pre>
+<h3 id="species-richness-estimation-pipeline">Species richness estimation pipeline</h3>
+<p>This pipeline loads a data file describing observed species counts and uses various statistical methods to estimate the richness of the population and to predict the richness of future samples.</p>
+<p><a href="/view/4/">View pipeline in the web application</a></p>
+<pre><code>#library(&quot;richest&quot;)
+#library(&quot;stats&quot;)
+#library(&quot;utils&quot;)
+digraph richness_estimation {
+  sargassoSeaOTUs [call=&quot;read.cps&quot;, file=&quot;&#39;sargassoSeaOTU_CPS_unique.txt&#39;&quot;];
+  chao [call=chao];
+  gt [method=&quot;&#39;gt&#39;&quot;, by=100, end=5000, start=0, call=richest];
+  sargassoSeaOTUs -&gt; gt  [arg=data];
+  pnpmle [method=&quot;&#39;pnpmle&#39;&quot;, by=100, end=5000, start=0, call=richest];
+  sargassoSeaOTUs -&gt; pnpmle  [arg=data];
+  lijou [method=&quot;&#39;lijou&#39;&quot;, by=100, end=5000, start=0, call=richest];
+  sargassoSeaOTUs -&gt; lijou  [arg=data];
+  sargassoSeaOTUs -&gt; chao  [arg=cps];
+}</code></pre>
+<h3 id="microarray-analysis-pipeline">Microarray analysis pipeline</h3>
+<p><a href="/view/8/">View pipeline in the web application</a></p>
+<pre><code>//This is an example DOT pipeline that downloads an AffyMetrix dataset from GEO and finds the top 100 differentially expressed genes
+#library(GEOquery)
+#library(limma)
+digraph csc_mousemodel {
+  gse41717 [call=getGEO,GEO=&quot;&#39;GSE41717&#39;&quot;]
+  gse41717_1 [call=&quot;[[&quot;,i=1]
+  gse41717 -&gt; gse41717_1 [arg=x]
+  gse41717_pData [call=pData]
+  gse41717_1 -&gt; gse41717_pData [arg=object]
+  gse41717_exprs [call=exprs]
+  gse41717_1 -&gt; gse41717_exprs [arg=object]
+  gse41717_fData [call=fData]
+  gse41717_1 -&gt; gse41717_fData [arg=object]
+  gse41717_design [call=&quot;model.matrix&quot;,object=&quot;~characteristics_ch1&quot;]
+  gse41717_pData -&gt; gse41717_design [arg=data]
+  gse41717_lm [call=&quot;lmFit&quot;]
+  gse41717_design -&gt; gse41717_lm [arg=design]
+  gse41717_exprs -&gt; gse41717_lm [arg=object]
+  gse41717_eBayes [call=&quot;eBayes&quot;]
+  gse41717_lm -&gt; gse41717_eBayes [arg=fit]
+  gse41717_topTable [call=topTable,coef=2,adjust=&quot;&#39;BH&#39;&quot;,&quot;p.value&quot;=0.05,number=100]
+  gse41717_eBayes -&gt; gse41717_topTable [arg=fit]
+  gse41717_topTable_annotated [call=merge,by=&quot;&#39;ID&#39;&quot;]
+  gse41717_topTable -&gt; gse41717_topTable_annotated [arg=x]
+  gse41717_fData -&gt; gse41717_topTable_annotated [arg=y]
+}</code></pre>
+<h2 id="hypothetical-applications">Hypothetical applications</h2>
+<p>In light of past experiences with the peer-review process for biological manuscripts that involve results of bioinformatic analysis, we hypothesized that our implementation of the pipeline specification described above would facilitate the communication of our computational methods.</p>
+<p>The proposed system and application also have potential to be useful by supporting rapid prototyping of computational pipelines. Users can design pipelines around function prototypes without the need to fully code the functions, and a system to share these pipelines can be used to collaborate to refine pipeline designs and to fill in the code.</p>
+<h2 id="real-applications">Real applications</h2>
+<p>Biologically-relevant project needed.</p>
+<h2 id="security">Security</h2>
+<p>The DOTpipeR web application produces some serious security concerns because it provides access to potentially arbitrary execution of R program code to any user. Therefore, the design of the mechanisms restricting code execution is an important aspect of this program. We do not implement security mechanisms at the level of the R execution environment because we assume that users who are running R code directly have user-level access to their machines. Instead, we implement security at the python web application level by mechanisms that restrict pipeline R function calls to a prescribed list and require that function parameters be R literals, i.e. numerals, strings, or special R tokens like NULL and TRUE.</p>
+<h2 id="issues">Issues</h2>
+<p>Some R packages (e.g. XML) use the externalptr class, evidently to store references to C-level data structures. When an object of this type is saved to disk and then later loaded in R, the data can become unavailable. Thus, the caching system will fail for pipelines which generate nodes containing such data.</p>
+<h2 id="conclusions">Conclusions</h2>
+<p>Used together, these tools facilitate shifting the cognitive load of bioinformatic analysis and communication tasks toward thinking in the biological domain.</p>

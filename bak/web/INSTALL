@@ -1,0 +1,83 @@
+# Install python3
+cd /tmp
+tar xfvjp ~/Downloads/Python-3.3.0.tar.bz2
+cd Python-3.3.0/
+./configure --prefix=${HOME}/local
+make
+make install
+
+# Virtualenv
+cd /tmp
+curl -O https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.1.tar.gz
+tar xfvzp virtualenv*
+cd virtualenv*
+python3.3 virtualenv.py --no-site-packages ~/venv 
+
+# Install R project (with R shared library enabled)
+./configure --prefix=${HOME}/local --enable-R-shlib
+make
+make install
+
+# Install R packages
+source("http://bioconductor.org/biocLite.R")
+biocLite("graph")
+install.packages("digest")
+
+R CMD INSTALL dotpipeR
+
+# Install other stuff
+cd ~/venv
+source bin/activate
+easy_install pyramid sqlalchemy zope.sqlalchemy pyramid_tm pyramid_chameleon markdown
+
+# Install pydot
+git clone https://github.com/nlhepler/pydot
+cd pydot
+python3.3 setup.py install
+
+# Install rpy2
+
+cd /tmp
+wget https://bitbucket.org/lgautier/rpy2/get/default.tar.gz
+tar xfvzp  default.tar.gz
+2to3-3.3  lgautier-rpy2-* -o rpy2-python3.3/ -n -W
+cd rpy2-python3.3
+cp -nr ../lgautier-rpy2*/* .
+python setup.py build --r-home ${HOME}/local/lib/R install
+
+## ensure that rpy2 finds the right version of R
+export R_HOME=${HOME}/local/lib/R
+
+rpy2 needs to find the correct version of the R shared library, so LD_LIBRARY_PATH needs to be set so tha
+t the linker finds the right library
+
+export LD_LIBRARY_PATH=${HOME}/local/lib/R/lib
+
+# Modify dotpipeR/web settings
+
+Edit settings.py in the pyramid app to set configuration variables
+
+# Configure mod_wsgi (optional)
+
+When installing mod_wsgi, ensure that the python system that you use to compile is the same as the system referenced in the mod_wsgi configuration.
+
+For example use:
+
+./configure --with-python=${HOME}/local/bin/python3
+make
+cp .libs/mod_wsgi.so /usr/lib/apache2/modules/mod_wsgi_homebrew.so
+
+with the following configuration:
+
+In /etc/apache/modules.d/70_mod_wsgi.conf
+
+<IfDefine WSGI>
+SetEnv R_HOME ${HOME}/local/lib/R
+WSGIPythonHome ${HOME}/local
+LoadModule wsgi_module modules/mod_wsgi_homebrew.so
+</IfDefine>
+
+Also, the directory containing the proper R libraries can be added to the LDPATH so that Apache will find it. In Gentoo, this can be done by adding this directory to the LDPATH variable in the /etc/env.d/00basic file, and then running env-update.
+# vim: ts=4 filetype=apache
+
+

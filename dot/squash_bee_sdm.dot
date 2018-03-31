@@ -1,0 +1,162 @@
+## run BIOCLIM with squash bee data
+#discoverlife_file <- "/home/cld/squash_bee_data/squash_bee_occurence_data/discover_life/peponapis_pruinosa_global.csv"
+#getlatlon <- function(occurrence_data) {
+#  lon = unlist(lapply(occurrence_data[,"decimalLongitude"], as.numeric))
+#  lat = unlist(lapply(occurrence_data[,"decimalLatitude"], as.numeric))
+#  latlon = cbind(lon,lat)
+#  colnames(latlon) <- c("lon","lat")
+#  return(as.data.frame(latlon))
+#}
+#getdates <- function(occurrence_data) {
+#  dates_str = lapply(occurrence_data[,"eventDate"], as.character)
+#  codes <- dates_str 
+#  dates <- t(sapply(codes,substring,first=c(1,6,9),last=c(4,7,10)))
+#  colnames(dates) <- c("year","month","day")
+#  return(as.data.frame(dates,stringsAsFactors=FALSE))
+#}
+#great_circle_distance <- function(latlon1,latlon2,r) {
+#    phi1 <- latlon1['lat']*pi/180
+#    lam1 <- latlon1['lon']*pi/180
+#    phi2 <- latlon2['lat']*pi/180
+#    lam2 <- latlon2['lon']*pi/180
+#    r*atan(sqrt((cos(phi2)*sin(abs(lam2-lam1)))^2+(cos(phi1)*sin(phi2)-sin(phi1)*cos(phi2)*cos(abs(lam2-lam1)))^2)/(sin(phi1)*sin(phi2)+cos(phi1)*cos(phi2)*cos(abs(lam2-lam1))))
+#}
+#sparsify <- function(latlon, delta) {
+#    latlon_sparse <- data.frame(lon=c(),lat=c())
+#    for (i in 1:nrow(latlon)) {
+#        if (nrow(latlon_sparse)>0) {
+#            if (all(apply(latlon_sparse,1,function(x) great_circle_distance(x, latlon[i,],6371)>delta))) {
+#                latlon_sparse <- rbind(latlon_sparse, data.frame(lon=latlon[i,'lon'],lat=latlon[i,'lat']))
+#            }
+#        } else {
+#            latlon_sparse <- rbind(latlon_sparse, data.frame(lon=latlon[i,'lon'],lat=latlon[i,'lat']))
+#        }
+#    }
+#    latlon_sparse
+#}
+#library(rgbif)
+#library(dismo)
+#library(raster)
+#library(rbison)
+#library(rgeos)
+#library(maptools)
+#pipeline_dir <- "/home/cld/dotpipeR/dot/"
+#enclosedPoints <- function(latlon,boundaries) {
+#    i <- sapply(1:nrow(latlon),function(i) sapply(1:length(boundaries),function(j) gContains(boundaries[j],SpatialPoints(latlon[i,],proj4string=boundaries@proj4string))))
+#    latlon[i,]
+#}
+#rename_obj <- function(obj, new_names) {
+#  names(obj) <- new_names
+#  return(obj)
+#}
+digraph squash_bee_sdm {
+    gbif_data [function=gbif, genus="'peponapis'", species="'pruinosa'", sp="TRUE"]
+    bison_data [function=bison, species="'Peponapis pruinosa'", type="'scientific_name'", start=0, count=1000]
+
+    bison_data -> latlon_bison
+    latlon_bison [expression="getlatlon(as.data.frame(bison_data$points))"];
+
+    gbif_data -> latlon_gbif
+    latlon_gbif [expression="coordinates(spTransform(SpatialPoints(gbif_data,proj4string=CRS('+proj=longlat')),CRS('+proj=longlat')))"];
+
+    latlon_discoverlife [function="read.csv",file=discoverlife_file,sep="','","row.names"=1,"col.names"="c('lon','lat')"]
+
+    latlon_discoverlife -> latlon
+    latlon_gbif -> latlon
+    latlon_bison -> latlon
+    latlon [expression="rbind(latlon_gbif,latlon_bison,latlon_discoverlife)"]
+    
+    latlon -> latlon_sparse
+    latlon_sparse [function=sparsify,delta=100]
+
+//    eastern_boundaries [expression="SpatialPolygons(list(Polygons(list(Polygon(data.frame(lon = c(-98.8195252967237, -99.1155498362051, -84.1663105923941, -64.776703256362, -65.3687523353248, -96.5993412506132, -98.5235007572423), lat = c(39.4682607658912, 31.4951884000515, 26.3546549010232, 36.8455395929176, 52.1622312430834, 51.9524135492455, 41.0418934696754)))),ID='eastern_boundaries')),proj4string=CRS('+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0'))"]
+//    latlon_sparse -> latlon_eastern [name="latlon"]
+//    eastern_boundaries -> latlon_eastern [name="boundaries"]
+//    latlon_eastern [function="enclosedPoints"]
+//    latlon_sparse -> latlon_eastern [name=x]
+//    latlon_eastern [function="identity"]
+
+    latlon_constraint [expression="latlon_constraint"]
+
+    latlon_constraint -> latlon_eastern
+    latlon_sparse -> latlon_eastern
+    latlon_eastern [expression="latlon_sparse[with(latlon_sparse,eval(latlon_constraint)),]"]
+
+    ext [function=extent, x=-125, xmax=-64, y=20, ymax=50];
+
+    bioclim_raster [function=getData,name="'worldclim'",var="'bio'",res=10];
+
+    bioclim_raster -> bioclimNA_raster [name=x]
+    ext -> bioclimNA_raster
+    bioclimNA_raster [function=crop,y=ext]
+
+    hwsdNAsp [expression="eval.Pipeline(read.Pipeline(paste0(pipeline_dir,'hwsd.dot')),cachedir=cachedir)['hwsdNAsp']"]
+    hwsdNAsp -> hwsdNA_raster
+    ext -> hwsdNA_raster
+    bioclimNA_raster -> hwsdNA_raster
+    hwsdNA_raster [expression="resample(extend(brick(hwsdNAsp),ext),bioclimNA_raster)"]
+
+    cucurbit_points [expression="eval.Pipeline(read.Pipeline(paste0(pipeline_dir,'squash_distribution_2015.dot')),cachedir=cachedir)['cucurbit_points']"]
+
+    cucurbit_points -> cucurbit_distanceNA_raster
+    bioclimNA_raster -> cucurbit_distanceNA_raster
+    cucurbit_distanceNA_raster [expression="distance(rasterize(cucurbit_points,bioclimNA_raster))"]
+
+
+    hwsdNA_raster -> predictors
+    bioclimNA_raster -> predictors
+    cucurbit_distanceNA_raster -> predictors
+    predictors [expression="stack(bioclimNA_raster,stack(cucurbit_distanceNA_raster,hwsdNA_raster))"]
+
+    predictors -> latlon_eastern_vals
+    latlon_eastern -> latlon_eastern_vals
+    latlon_eastern_vals [function=extract, x=predictors, y=latlon_eastern]
+
+// build model based on eastern points (no squash)
+    latlon_eastern_vals -> model_eastern_nosquash
+//    predictors -> model_eastern_nosquash [name=x]
+    model_eastern_nosquash [expression="bioclim(latlon_eastern_vals[,c(10,11,21,22)])"];
+
+    predictors -> dist_eastern_nosquash [name=object]
+    model_eastern_nosquash -> dist_eastern_nosquash [name=model];
+//    ext -> dist_eastern_nosquash [name=ext];
+    dist_eastern_nosquash [function=predict, progress="''"];
+
+// build model based on eastern points (no squash, no soil)
+    latlon_eastern_vals -> model_eastern_nosquash_nosoil
+//    predictors -> model_eastern_nosquash_nosoil [name=x]
+    model_eastern_nosquash_nosoil [expression="bioclim(latlon_eastern_vals[,c(10,11)])"];
+
+    predictors -> dist_eastern_nosquash_nosoil [name=object]
+    model_eastern_nosquash_nosoil -> dist_eastern_nosquash_nosoil [name=model];
+//    ext -> dist_eastern_nosquash_nosoil [name=ext];
+    dist_eastern_nosquash_nosoil [function=predict, progress="''"];
+
+// build model based on eastern points (no soil)
+    latlon_eastern_vals -> model_eastern_nosoil
+//    predictors -> model_eastern_nosoil [name=x]
+    model_eastern_nosoil [expression="bioclim(latlon_eastern_vals[,c(10,11,20)])"];
+
+    predictors -> dist_eastern_nosoil [name=object]
+    model_eastern_nosoil -> dist_eastern_nosoil [name=model];
+//    ext -> dist_eastern_nosoil [name=ext];
+    dist_eastern_nosoil [function=predict, progress="''"];
+
+//    worldclim_2050_rcp26 [expression="rename_obj(getData(name='CMIP5',var='bio',res=10, model='BC', rcp=26, year=50), paste0('bio',c(1:19)))"]
+//
+//    worldclim_2050_rcp26 -> worldclim_2050_rcp26_NA [name=x]
+//    ext -> worldclim_2050_rcp26_NA
+//    worldclim_2050_rcp26_NA [function=crop,y=ext]
+//
+//    worldclim_2050_rcp26_NA -> future_predictors_2050_rcp26
+//    hwsdNA_raster -> future_predictors_2050_rcp26
+//    future_predictors_2050_rcp26 [expression="stack(worldclim_2050_rcp26_NA,hwsdNA_raster)"];
+//
+//    future_predictors_2050_rcp26 -> dist_2050_rcp26_eastern_nosquash_nosoil [name=object]
+//    model_eastern_nosquash_nosoil -> dist_2050_rcp26_eastern_nosquash_nosoil [name=model];
+//    dist_2050_rcp26_eastern_nosquash_nosoil [function=predict, progress="''"];
+//
+//    future_predictors_2050_rcp26 -> dist_2050_rcp26_eastern_nosquash [name=object]
+//    model_eastern_nosquash -> dist_2050_rcp26_eastern_nosquash [name=model];
+//    dist_2050_rcp26_eastern_nosquash [function=predict, progress="''"];
+}

@@ -1,0 +1,23 @@
+#library(arraydata)
+#source("/home/cld/projects/biology/src/microarray/R/mafn.R")
+digraph gse19029 {
+  rawdata0 [function="loadGenepix",targets_file="'/var/lib/cld-data/arrays/brian/GSE19029/targets.txt'", probes_file="'/var/lib/cld-data/arrays/brian/GSE19029/v4.3_genelist_L1.1.1.10_master.txt'"]
+  MA [function=as,Class="'MAList'"]
+  rawdata0 -> MA [name=object]
+  rawdata0 -> filter [name=arraydata]
+  filter [function=passQC]
+  QCfilter [function=setNAbyfilter]
+  MA -> QCfilter [name=arraydata]
+  filter -> QCfilter [name=filter]
+  probeavg [function="probeavg",group_probes_by="'GENE_SYMBOL'"]
+  QCfilter -> probeavg [name=arraydata]
+  loessConservative [function="loessConservative"]
+  probeavg -> loessConservative [name=arraydata]
+  dimovaGenesIndex [function=dimovaGenesIndex, annotFile="'/var/lib/cld-data/arrays/supp_dimova/Dimova_flybase_annotation.txt'"]
+  loessConservative -> dimovaGenesIndex [name=arraydata]
+  dimovaTable [function=dimovaTable, table1a="'/var/lib/cld-data/arrays/supp_dimova/table1a_formatted.txt'", table1b="'/var/lib/cld-data/arrays/supp_dimova/table1b_formatted.txt'", table1c="'/var/lib/cld-data/arrays/supp_dimova/table1c_formatted.txt'"]
+  dimovaRegression [function=dimovaRegression]
+  loessConservative -> dimovaRegression [name=arraydata]
+  dimovaTable -> dimovaRegression [name=dimova_table]
+  dimovaGenesIndex -> dimovaRegression [name=dimova_index]
+}

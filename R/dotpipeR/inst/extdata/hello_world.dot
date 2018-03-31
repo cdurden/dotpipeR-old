@@ -1,0 +1,7 @@
+digraph helloWorld {
+  hello [expression="'Hello'"] // comment
+  world [function=c,text="'world!'"]
+  hello_world [function="paste",sep="', '"]
+  hello->hello_world [name="a"]
+  world->hello_world [name=b]
+}

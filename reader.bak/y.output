@@ -1,0 +1,596 @@
+Terminals unused in grammar
+
+   UNMATCHED
+
+
+Grammar
+
+    0 $accept: graph $end
+
+    1 graph: preprocessor_lines GRAPH ID OBRACE stmt_list EBRACE preprocessor_lines
+
+    2 subgraph_begin: SUBGRAPH ID
+
+    3 subgraph: subgraph_begin OBRACE stmt_list EBRACE
+
+    4 stmt_list: /* empty */
+    5          | stmt SEMICOLON stmt_list
+    6          | stmt stmt_list
+
+    7 stmt: edge_stmt
+    8     | node_stmt
+    9     | attr_stmt
+   10     | subgraph
+   11     | ID EQUALS ID
+
+   12 attr_stmt: GRAPH
+   13          | NODE
+   14          | EDGE attr_list
+
+   15 edge_stmt: node_stmt edgeRHS attr_list
+
+   16 edgeRHS: EDGEOP node_id
+
+   17 node_stmt: node_id attr_list
+
+   18 port: /* empty */
+   19     | COLON ID
+   20     | COLON ID COLON ID
+
+   21 node_id: ID port
+
+   22 attr_list: /* empty */
+   23          | LSBRACKET a_list RSBRACKET
+
+   24 a_list: /* empty */
+   25       | a_list COMMA attr
+   26       | a_list attr
+
+   27 attr: ID EQUALS ID
+
+   28 preprocessor_lines: /* empty */
+   29                   | preprocessor_lines PREPROCESSORLINE
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+error (256)
+ID (258) 1 2 11 19 20 21 27
+GRAPH (259) 1 12
+NODE (260) 13
+EDGE (261) 14
+SUBGRAPH (262) 2
+OBRACE (263) 1 3
+EBRACE (264) 1 3
+EDGEOP (265) 16
+COMMA (266) 25
+COLON (267) 19 20
+SEMICOLON (268) 5
+EQUALS (269) 11 27
+LSBRACKET (270) 23
+RSBRACKET (271) 23
+PREPROCESSORLINE (272) 29
+UNMATCHED (273)
+
+
+Nonterminals, with rules where they appear
+
+$accept (19)
+    on left: 0
+graph (20)
+    on left: 1, on right: 0
+subgraph_begin (21)
+    on left: 2, on right: 3
+subgraph (22)
+    on left: 3, on right: 10
+stmt_list (23)
+    on left: 4 5 6, on right: 1 3 5 6
+stmt (24)
+    on left: 7 8 9 10 11, on right: 5 6
+attr_stmt (25)
+    on left: 12 13 14, on right: 9
+edge_stmt (26)
+    on left: 15, on right: 7
+edgeRHS (27)
+    on left: 16, on right: 15
+node_stmt (28)
+    on left: 17, on right: 8 15
+port (29)
+    on left: 18 19 20, on right: 21
+node_id (30)
+    on left: 21, on right: 16 17
+attr_list (31)
+    on left: 22 23, on right: 14 15 17
+a_list (32)
+    on left: 24 25 26, on right: 23 25 26
+attr (33)
+    on left: 27, on right: 25 26
+preprocessor_lines (34)
+    on left: 28 29, on right: 1 29
+
+
+state 0
+
+    0 $accept: . graph $end
+
+    $default  reduce using rule 28 (preprocessor_lines)
+
+    graph               go to state 1
+    preprocessor_lines  go to state 2
+
+
+state 1
+
+    0 $accept: graph . $end
+
+    $end  shift, and go to state 3
+
+
+state 2
+
+    1 graph: preprocessor_lines . GRAPH ID OBRACE stmt_list EBRACE preprocessor_lines
+   29 preprocessor_lines: preprocessor_lines . PREPROCESSORLINE
+
+    GRAPH             shift, and go to state 4
+    PREPROCESSORLINE  shift, and go to state 5
+
+
+state 3
+
+    0 $accept: graph $end .
+
+    $default  accept
+
+
+state 4
+
+    1 graph: preprocessor_lines GRAPH . ID OBRACE stmt_list EBRACE preprocessor_lines
+
+    ID  shift, and go to state 6
+
+
+state 5
+
+   29 preprocessor_lines: preprocessor_lines PREPROCESSORLINE .
+
+    $default  reduce using rule 29 (preprocessor_lines)
+
+
+state 6
+
+    1 graph: preprocessor_lines GRAPH ID . OBRACE stmt_list EBRACE preprocessor_lines
+
+    OBRACE  shift, and go to state 7
+
+
+state 7
+
+    1 graph: preprocessor_lines GRAPH ID OBRACE . stmt_list EBRACE preprocessor_lines
+
+    ID        shift, and go to state 8
+    GRAPH     shift, and go to state 9
+    NODE      shift, and go to state 10
+    EDGE      shift, and go to state 11
+    SUBGRAPH  shift, and go to state 12
+
+    $default  reduce using rule 4 (stmt_list)
+
+    subgraph_begin  go to state 13
+    subgraph        go to state 14
+    stmt_list       go to state 15
+    stmt            go to state 16
+    attr_stmt       go to state 17
+    edge_stmt       go to state 18
+    node_stmt       go to state 19
+    node_id         go to state 20
+
+
+state 8
+
+   11 stmt: ID . EQUALS ID
+   21 node_id: ID . port
+
+    COLON   shift, and go to state 21
+    EQUALS  shift, and go to state 22
+
+    $default  reduce using rule 18 (port)
+
+    port  go to state 23
+
+
+state 9
+
+   12 attr_stmt: GRAPH .
+
+    $default  reduce using rule 12 (attr_stmt)
+
+
+state 10
+
+   13 attr_stmt: NODE .
+
+    $default  reduce using rule 13 (attr_stmt)
+
+
+state 11
+
+   14 attr_stmt: EDGE . attr_list
+
+    LSBRACKET  shift, and go to state 24
+
+    $default  reduce using rule 22 (attr_list)
+
+    attr_list  go to state 25
+
+
+state 12
+
+    2 subgraph_begin: SUBGRAPH . ID
+
+    ID  shift, and go to state 26
+
+
+state 13
+
+    3 subgraph: subgraph_begin . OBRACE stmt_list EBRACE
+
+    OBRACE  shift, and go to state 27
+
+
+state 14
+
+   10 stmt: subgraph .
+
+    $default  reduce using rule 10 (stmt)
+
+
+state 15
+
+    1 graph: preprocessor_lines GRAPH ID OBRACE stmt_list . EBRACE preprocessor_lines
+
+    EBRACE  shift, and go to state 28
+
+
+state 16
+
+    5 stmt_list: stmt . SEMICOLON stmt_list
+    6          | stmt . stmt_list
+
+    ID         shift, and go to state 8
+    GRAPH      shift, and go to state 9
+    NODE       shift, and go to state 10
+    EDGE       shift, and go to state 11
+    SUBGRAPH   shift, and go to state 12
+    SEMICOLON  shift, and go to state 29
+
+    $default  reduce using rule 4 (stmt_list)
+
+    subgraph_begin  go to state 13
+    subgraph        go to state 14
+    stmt_list       go to state 30
+    stmt            go to state 16
+    attr_stmt       go to state 17
+    edge_stmt       go to state 18
+    node_stmt       go to state 19
+    node_id         go to state 20
+
+
+state 17
+
+    9 stmt: attr_stmt .
+
+    $default  reduce using rule 9 (stmt)
+
+
+state 18
+
+    7 stmt: edge_stmt .
+
+    $default  reduce using rule 7 (stmt)
+
+
+state 19
+
+    8 stmt: node_stmt .
+   15 edge_stmt: node_stmt . edgeRHS attr_list
+
+    EDGEOP  shift, and go to state 31
+
+    $default  reduce using rule 8 (stmt)
+
+    edgeRHS  go to state 32
+
+
+state 20
+
+   17 node_stmt: node_id . attr_list
+
+    LSBRACKET  shift, and go to state 24
+
+    $default  reduce using rule 22 (attr_list)
+
+    attr_list  go to state 33
+
+
+state 21
+
+   19 port: COLON . ID
+   20     | COLON . ID COLON ID
+
+    ID  shift, and go to state 34
+
+
+state 22
+
+   11 stmt: ID EQUALS . ID
+
+    ID  shift, and go to state 35
+
+
+state 23
+
+   21 node_id: ID port .
+
+    $default  reduce using rule 21 (node_id)
+
+
+state 24
+
+   23 attr_list: LSBRACKET . a_list RSBRACKET
+
+    $default  reduce using rule 24 (a_list)
+
+    a_list  go to state 36
+
+
+state 25
+
+   14 attr_stmt: EDGE attr_list .
+
+    $default  reduce using rule 14 (attr_stmt)
+
+
+state 26
+
+    2 subgraph_begin: SUBGRAPH ID .
+
+    $default  reduce using rule 2 (subgraph_begin)
+
+
+state 27
+
+    3 subgraph: subgraph_begin OBRACE . stmt_list EBRACE
+
+    ID        shift, and go to state 8
+    GRAPH     shift, and go to state 9
+    NODE      shift, and go to state 10
+    EDGE      shift, and go to state 11
+    SUBGRAPH  shift, and go to state 12
+
+    $default  reduce using rule 4 (stmt_list)
+
+    subgraph_begin  go to state 13
+    subgraph        go to state 14
+    stmt_list       go to state 37
+    stmt            go to state 16
+    attr_stmt       go to state 17
+    edge_stmt       go to state 18
+    node_stmt       go to state 19
+    node_id         go to state 20
+
+
+state 28
+
+    1 graph: preprocessor_lines GRAPH ID OBRACE stmt_list EBRACE . preprocessor_lines
+
+    $default  reduce using rule 28 (preprocessor_lines)
+
+    preprocessor_lines  go to state 38
+
+
+state 29
+
+    5 stmt_list: stmt SEMICOLON . stmt_list
+
+    ID        shift, and go to state 8
+    GRAPH     shift, and go to state 9
+    NODE      shift, and go to state 10
+    EDGE      shift, and go to state 11
+    SUBGRAPH  shift, and go to state 12
+
+    $default  reduce using rule 4 (stmt_list)
+
+    subgraph_begin  go to state 13
+    subgraph        go to state 14
+    stmt_list       go to state 39
+    stmt            go to state 16
+    attr_stmt       go to state 17
+    edge_stmt       go to state 18
+    node_stmt       go to state 19
+    node_id         go to state 20
+
+
+state 30
+
+    6 stmt_list: stmt stmt_list .
+
+    $default  reduce using rule 6 (stmt_list)
+
+
+state 31
+
+   16 edgeRHS: EDGEOP . node_id
+
+    ID  shift, and go to state 40
+
+    node_id  go to state 41
+
+
+state 32
+
+   15 edge_stmt: node_stmt edgeRHS . attr_list
+
+    LSBRACKET  shift, and go to state 24
+
+    $default  reduce using rule 22 (attr_list)
+
+    attr_list  go to state 42
+
+
+state 33
+
+   17 node_stmt: node_id attr_list .
+
+    $default  reduce using rule 17 (node_stmt)
+
+
+state 34
+
+   19 port: COLON ID .
+   20     | COLON ID . COLON ID
+
+    COLON  shift, and go to state 43
+
+    $default  reduce using rule 19 (port)
+
+
+state 35
+
+   11 stmt: ID EQUALS ID .
+
+    $default  reduce using rule 11 (stmt)
+
+
+state 36
+
+   23 attr_list: LSBRACKET a_list . RSBRACKET
+   25 a_list: a_list . COMMA attr
+   26       | a_list . attr
+
+    ID         shift, and go to state 44
+    COMMA      shift, and go to state 45
+    RSBRACKET  shift, and go to state 46
+
+    attr  go to state 47
+
+
+state 37
+
+    3 subgraph: subgraph_begin OBRACE stmt_list . EBRACE
+
+    EBRACE  shift, and go to state 48
+
+
+state 38
+
+    1 graph: preprocessor_lines GRAPH ID OBRACE stmt_list EBRACE preprocessor_lines .
+   29 preprocessor_lines: preprocessor_lines . PREPROCESSORLINE
+
+    PREPROCESSORLINE  shift, and go to state 5
+
+    $default  reduce using rule 1 (graph)
+
+
+state 39
+
+    5 stmt_list: stmt SEMICOLON stmt_list .
+
+    $default  reduce using rule 5 (stmt_list)
+
+
+state 40
+
+   21 node_id: ID . port
+
+    COLON  shift, and go to state 21
+
+    $default  reduce using rule 18 (port)
+
+    port  go to state 23
+
+
+state 41
+
+   16 edgeRHS: EDGEOP node_id .
+
+    $default  reduce using rule 16 (edgeRHS)
+
+
+state 42
+
+   15 edge_stmt: node_stmt edgeRHS attr_list .
+
+    $default  reduce using rule 15 (edge_stmt)
+
+
+state 43
+
+   20 port: COLON ID COLON . ID
+
+    ID  shift, and go to state 49
+
+
+state 44
+
+   27 attr: ID . EQUALS ID
+
+    EQUALS  shift, and go to state 50
+
+
+state 45
+
+   25 a_list: a_list COMMA . attr
+
+    ID  shift, and go to state 44
+
+    attr  go to state 51
+
+
+state 46
+
+   23 attr_list: LSBRACKET a_list RSBRACKET .
+
+    $default  reduce using rule 23 (attr_list)
+
+
+state 47
+
+   26 a_list: a_list attr .
+
+    $default  reduce using rule 26 (a_list)
+
+
+state 48
+
+    3 subgraph: subgraph_begin OBRACE stmt_list EBRACE .
+
+    $default  reduce using rule 3 (subgraph)
+
+
+state 49
+
+   20 port: COLON ID COLON ID .
+
+    $default  reduce using rule 20 (port)
+
+
+state 50
+
+   27 attr: ID EQUALS . ID
+
+    ID  shift, and go to state 52
+
+
+state 51
+
+   25 a_list: a_list COMMA attr .
+
+    $default  reduce using rule 25 (a_list)
+
+
+state 52
+
+   27 attr: ID EQUALS ID .
+
+    $default  reduce using rule 27 (attr)

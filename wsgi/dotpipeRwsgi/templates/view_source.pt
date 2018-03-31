@@ -1,0 +1,27 @@
+<div metal:use-macro="view.layout">
+<tal:block metal:fill-slot="head-more">
+<script metal:use-macro="view.macros['jquery']"></script>
+<script metal:use-macro="view.macros['jquery-ui']"></script>
+<script metal:use-macro="view.macros['cluetip']"></script>
+<style>
+${structure:css}
+</style>
+
+</tal:block>
+<tal:block metal:fill-slot="loginout">
+        <a tal:condition="context.logged_in is not None"
+           href="${request.application_url}/logout">Logout</a>
+        <a tal:condition="context.logged_in is None"
+           href="${request.application_url}/login">Log In</a>
+</tal:block>
+<tal:block metal:fill-slot="nav">
+    <a href="${structure: request.route_url('view',pipeline_id=pipeline.id)}">View pipeline graph</a>
+    <a href="${structure: request.route_url('pipelines_static', subpath=pipeline.uri_ref)}">Download DOT file</a>
+    <a href="${structure: request.route_url('edit',pipeline_id=pipeline.id)}">Edit</a>
+    <a href="${structure: request.route_url('status',pipeline_id=pipeline.id)}">Execution</a>
+    <input id="cb" type="checkbox" style="display:inline;" checked>Show node annotations 
+</tal:block>
+<tal:block metal:fill-slot="content">
+    ${structure: source}
+</tal:block>
+</div>

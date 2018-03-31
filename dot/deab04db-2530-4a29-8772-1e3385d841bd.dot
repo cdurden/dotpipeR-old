@@ -1,0 +1,38 @@
+## run BIOCLIM with squash bee data
+#getlatlon <- function(occurrence_data) {
+#  lon = unlist(lapply(occurrence_data[,"decimalLongitude"], as.numeric))
+#  lat = unlist(lapply(occurrence_data[,"decimalLatitude"], as.numeric))
+#  latlon = cbind(lon,lat)
+#  colnames(latlon) <- c("lon","lat")
+#  return(as.data.frame(latlon))
+#}
+#getdates <- function(occurrence_data) {
+#  dates_str = lapply(occurrence_data[,"eventDate"], as.character)
+#  codes <- dates_str 
+#  dates <- t(sapply(codes,substring,first=c(1,6,9),last=c(4,7,10)))
+#  colnames(dates) <- c("year","month","day")
+#  return(as.data.frame(dates,stringsAsFactors=FALSE))
+#}
+#library(rgbif)
+#library(dismo)
+digraph squash_bee_sdm {
+    occurrence_data [function=occ_data,taxonKey=1339646,hasCoordinate=TRUE];
+    files [function="list.files",path="'bioclim'", pattern="'bil'", "full.names"=TRUE];
+    predictors [function=stack,x=files];
+    dates [expression="getdates(as.data.frame(occurrence_data$data))"];
+    latlon [expression="getlatlon(as.data.frame(occurrence_data$data))"];
+    presvals [function=extract, x=predictors, y=latlon];
+//    bc [expression="bioclim(presvals[,c('bio1', 'bio5', 'bio12')])"];
+    group [function=kfold,x=latlon, k=5];
+    pres_train [expression="latlon[group != 1,]"];
+    pres_test [expression="latlon[group == 1,]"];
+    ext [function=extent, x=-100, xmax=-32, ymin=20, ymax=50];
+    bc [function=bioclim,x=predictors, p=pres_train];
+
+    backg [expression="randomPoints(predictors, n=1000, ext=ext, extf = 1.25)"];
+    group [function=kfold, x=backg, k=5];
+    backg_test [expression="backg[group == 1, ]"];
+    e [function=evaluate, p=pres_test, a=backg_test, x=bc, tr=pred_nf];
+    tr [function=threshold, x=e, stat="'spec_sens'"];
+    pb [function=predict, object=pred_nf, x=bc, ext=ext, progress="''"];
+}

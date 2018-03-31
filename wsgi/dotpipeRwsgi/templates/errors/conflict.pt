@@ -1,0 +1,13 @@
+<div metal:use-macro="view.layout">
+<tal:block metal:fill-slot="head-more">
+<script metal:use-macro="view.macros['jquery']"></script>
+</tal:block>
+<tal:block metal:fill-slot="status">
+<p tal:content="python: exc.msg">message</p>
+<a href="${structure: request.route_url('edit',pipeline_id=exc.new)}?confirm=1">Confirm change</a>
+<a href="${structure: request.route_url('edit',pipeline_id=exc.old)}">Return to existing edition session</a>
+</tal:block>
+<tal:block metal:fill-slot="nav">
+</tal:block>
+<div id="pipeline" metal:fill-slot="content" />
+</div>

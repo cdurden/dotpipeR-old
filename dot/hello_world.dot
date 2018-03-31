@@ -1,0 +1,7 @@
+digraph helloWorld {
+  hello [function=c,con="'Hello'"] // comment
+  world [function=c,text="'world!'"]
+  hello_world [function=paste,"sep"="', '"]
+  world->hello_world
+  hello->hello_world
+}

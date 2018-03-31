@@ -1,0 +1,32 @@
+digraph sim_ecoli {
+regnet [vertexdictfile="'coliNodesDictionary.txt'", graphfile="'coli1_1Inter_st.txt'", function=graph_from_edge_list_file];
+regnet -> regparams  [name=g];
+regparams [function="runif_regparams"];
+regparams -> gmrf  [name=regparams];
+regnet -> gmrf  [name=g];
+gmrf [function=genGMRF];
+}
+#library(GMRF)
+#graph_from_edge_list_file <- function(graphfile, vertexdictfile) {
+#  graphdata = read.table(graphfile)
+#  vertexdict = read.table(vertexdictfile,row.names=1,as.is=TRUE)
+#  vertexdict[,2]=row.names(vertexdict)
+#  names(vertexdict)=c("gene","id")
+#  edges = with(vertexdict,lapply(id,function(x){list(edges=graphdata[graphdata[,1]==x,2])})) # edge list for each vertex, gives list of genes regulated by the gene at that vertex
+#  edgeL = with(vertexdict,lapply(id,function(x){graphdata[graphdata[,1]==x,2]})) # edge list for each vertex, gives list of genes regulated by the gene at that verte?x
+#  names(edgeL) = vertexdict$gene
+#  A = matrix(0,nrow=length(edgeL),ncol=length(edgeL))
+#  for (i in 1:nrow(A)) {A[i,edgeL[[i]]]=1}
+#  rownames(A)=colnames(A)=vertexdict$gene
+#  g0 = as(A,"graphAM")
+#  g0 = as(g0,"graphNEL")
+#}
+#runif_regparams <- function(g) {
+#  A = as(g,"matrix")
+#  i = which(A==1)
+#  regparams=matrix(0,nrow=nrow(A),ncol=ncol(A))
+#  colnames(regparams) <- rownames(regparams) <- rownames(A)
+#  regparams[i] = sample(runif(length(i),0,1))
+#  diag(regparams) = 1
+#  regparams
+#}

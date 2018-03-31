@@ -1,0 +1,163 @@
+%
+% NOTE -- ONLY EDIT graph.Rnw!!!
+% graph.tex file will get overwritten.
+%
+%\VignetteIndexEntry{Graph}
+%\VignetteDepends{dotpipeR}
+%\VignetteKeywords{DOTpipeR}
+%\VignettePackage{dotpipeR}
+\documentclass{article}
+
+\usepackage{hyperref}
+\usepackage{verbatim}
+
+\textwidth=6.2in
+\textheight=8.5in
+%\parskip=.3cm
+\oddsidemargin=.1in
+\evensidemargin=.1in
+\headheight=-.3in
+
+
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+
+
+\newcommand{\classdef}[1]{%
+  {\em #1}
+}
+
+\begin{document}
+\title{How to use the DOTpipeR package}
+
+\maketitle
+
+\section{Introduction}
+
+The \Rpackage{dotpipeR} package provides an interpreter for computational pipelines written using the DOT grammar. A computational pipeline is represented using a Pipeline class, a subclass of the graphNEL class. Each node in the graph is associated with an R function or expression which is evaluated to produce that node's (output) data. The flow of information is constrained by the topology of the pipeline's graph structure such that successor nodes are computed from the evaluated data of predecessor nodes. The graph structure can be visualized and used to assist the analysis and design of complicated computational pipelines. The package also includes a caching system that is configured (by default) to save and load images of the evaluated data at each node. 
+
+<<library>>=
+library(dotpipeR)
+@
+
+\section{Hello, World! example}
+The following is a "Hello, World!" computational pipeline written for DOTpipeR using the DOT language:
+
+<<read_hello_world0,echo=FALSE,results=verbatim>>=
+dotfile <- system.file("extdata", "hello_world.dot", package="dotpipeR")
+cat(paste(readLines(dotfile),collapse="\n"))
+@
+
+The code for this pipeline is intended to indicate various choices for using (or not using) the double-quote character to enclose R identifiers. Note, however, that the use of the double-quote character is not optional around character strings, such as 'Hello', which can only be expressed in the DOT syntax nested in both double- and single-quotes. Further details are presented in the section "Double-quoting DOT identifiers for function names, arguments, and expressions."
+
+The pipeline above is also available as a .dot file packaged with \Rpackage{DOTpipeR}. The following commands will load this pipeline from the DOT file: 
+
+<<read_hello_world>>=
+dotfile <- system.file("extdata", "hello_world.dot", package="dotpipeR")
+pipeline = read.Pipeline(dotfile)
+@
+
+The following commands will print the list of nodes:
+
+<<nodes>>=
+library(graph)
+nodes(pipeline)
+@
+
+The Rgraphviz package can be used to visualize the pipeline as a directed graph:
+
+<<viz,fig=TRUE>>=
+library(Rgraphviz)
+plot(pipeline)
+@
+
+To run the pipeline, do:
+<<run>>=
+eval.Pipeline(pipeline)
+@
+
+Now that the pipeline has been evaluated, we can look at the results. In particular, we print the value assigned to the "hello\_world" node:
+
+<<result>>=
+print(pipeline['hello_world'])
+@
+
+\section{Rules for pipeline evaluation}
+
+The rules for evaluating pipeline nodes are tied to the way that DOTpipeR interprets the DOT format, so it is helpful to speak in terms of the DOT grammar (as described in 'The DOT Language' document, which is available on the GraphViz website). Let us look at the example "Hello, World" pipeline above. The file begins with the digraph keyword followed by an identifier. The body of the file is enclosed in braces, and this is where the behavior of the pipeline is specified. Inside the braces, are five statements, one on each line. 
+
+\begin{verbatim}
+  hello [expression="'Hello'"] // comment
+  world [function=c,text="'world!'"]
+  hello_world [function="paste",sep="', '"]
+  hello->hello_world [name="a"]
+  world->hello_world [name=b]
+\end{verbatim}
+
+The first three statements are node statements, and the last two, which contain the "->" edge symbol, are edge statements.
+
+Each node statement has one of the special attributes: "expression" or "function". These are used to specify an expression or a function, respectively, that will be used to evaluate that node. The first node statement above contains the expression attribute, so the value assigned to this node will be the parsed value of the expression attribute: 'Hello' (Note that such attributes, as they are parsed to form R expressions, never include the outermost double-quote characters).
+The name of the node to which this value will be assigned is the node identifier 'hello' that begins the node statement. Since we have run the pipeline, we can print its value.
+
+<<result>>=
+print(pipeline['hello'])
+@
+
+The name of the second node in the pipeline is given by its node identifier 'world'. Its value is computed by calling the function 'c', with 'world!' as an argument.
+
+<<result>>=
+print(pipeline['world'])
+@
+
+The name of the final node in the pipeline is given by its node identifier 'hello\_world'. The value is computed by calling the function 'paste', with sep=', ' as an argument.
+
+The final two statements are edge statements. These specify that two more arguments will also be passed to this function; the names of these arguments are given by the 
+"name" attributes, and the values of these arguments are the evaluated (output) data of the nodes whose names appear to the left of the edge symbol "->", i.e. the 'hello' and 'world' nodes, respectively.
+
+So the value at this node is computed like the following R expression: paste(a=pipeline['hello'],b=pipeline['world'],sep=', ')
+
+<<<result>>=
+print(pipeline['hello_world'])
+paste(a=pipeline['hello'],b=pipeline['world'],sep=', ')
+@
+
+\section{Evaluation of functions}
+
+The pipeline above contains two nodes which are evaluated using function calls. These are the \verb|world| and \verb|hello_world| nodes, each of which contains a "function" attribute. When eval.Pipeline or eval.PipelineNodes is called, these functions will evaluate \verb|world| by calling the function named "c". The envir argument controls where these functions will begin searching for the "c" function. See the help page for eval.Pipeline for more details. The arguments passed to "c" for this function call are given by the remaining attributes in the node's attributes list; one argument named "text", with value 'world!' is passed. Thus, internally, the argument list passed to the function is given by the R expression \verb|list(text='world!')|.
+
+The function call for the \verb|hello_world| node is more complicated because arguments are specified in two ways. We have the "sep" argument, which is given in the node's attributes list, as before. But we also have arguments that are given by edge statements; the fact that the \verb|hello_world| node is on the right hand side (RHS) of the pipeline's two edge statements means that these statements specify arguments to the function for the \verb|hello_world| node. The argument names are given by the values of the "name" attributes for the edge statements, and the values are the evaluated data of the nodes on the left hand side (LHS). In summary, the argument list passed to the function internally is given by the R expression \verb|list(a=pipeline['hello'],b=pipeline['world'],sep=', ')|.
+
+There is one more issue involved with specifying arguments to functions: Some functions, like paste, are not designed to accept named arguments. The names 'a' and 'b' that were used for the arguments to paste above are not matched by the paste function. The paste function concatenates its arguments based on the order in which the arguments are passed to the function, not on their names. Since we don't assume that the order of attributes and statements in the DOT language has meaning, we need another way to specify the order of function arguments. \Rpackage{DOTpipeR} does this by sorting argument lists in alphabetical order (using the ordering defined by the C locale). Sometimes it is sufficient, as above, to give names, like 'a' and 'b' as above, to arguments which are not part of a function's formal arguments. In such cases, argument 'a' comes before argument 'b' in the function call. In the example above, the paste function then concatenates the values of 'a' and 'b' in that order. However, some functions will misbehave when arguments are passed with names; in such cases it is necessary to evaluate nodes using expressions, which provides more flexibility.
+
+\section{Evaluation of expressions}
+
+In the example above, the 'hello' node statement contained the expression attribute which specified an R expression. The expression contained a single-quoted string. This expression was evaluated by \Rpackage{DOTpipeR} and the result, which was simply the character string itself, was assigned to the 'hello' node. It is also possible to specify more complicated expressions that contain R variables. To demonstrate this, we rewrite the \verb|hello_world| node using an expression instead of a function:
+
+\begin{verbatim}
+  hello [expression="'Hello'"] // comment
+  world [function=c,text="'world!'"]
+  hello_world [expression="paste(a,b,sep=', ')"]
+  hello->hello_world [name=a]
+  world->hello_world [name=b]
+\end{verbatim}
+
+The expression used to evaluate the \verb|hello_world| node in this case is the R expression \verb|paste(a,b,sep=', ')|. Note that it contains the variables 'a' and 'b'. The values of these variables are determined by the other node attributes and the arguments given by edge statements. Here, the last two edge statements set the values of a and b to the values of the 'hello' and 'world' nodes, respectively. We can also pass arguments as additional node attributes. For example, the sep argument could be passed in this way:
+
+\begin{verbatim}
+  hello_world [expression="paste(a,b,sep=s)",s="', '"]
+  hello->hello_world [name=a]
+  world->hello_world [name=b]
+\end{verbatim}
+
+In summary, the values of variables used in an expression for a node are specified by edge statements which point to that node, with name attributes that specify the argument names, and by additional attributes in the node statements, given as "name=value" pairs.
+
+\section{Double-quoting DOT identifiers for function names, arguments, and expressions}
+
+When specifying function names, argument names, argument values, and expressions using attributes in the DOT language, it is often necessary to use double-quotes. In particular, if these expressions contain any characters which are not allowed in unquoted DOT identifiers, such as \verb|.()[]| or which do not follow the rules for DOT identifiers, such as non-numeric expressions that begin with numerals, then these expressions need to be enclosed in double-quotes. Double-quotes within double-quoted expression can be escaped with the backslash escape character \verb|\|.
+
+\end{document}
+

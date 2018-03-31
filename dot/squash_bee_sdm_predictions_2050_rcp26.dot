@@ -1,0 +1,95 @@
+## run BIOCLIM with squash bee data
+#getlatlon <- function(occurrence_data) {
+#  lon = unlist(lapply(occurrence_data[,"decimalLongitude"], as.numeric))
+#  lat = unlist(lapply(occurrence_data[,"decimalLatitude"], as.numeric))
+#  latlon = cbind(lon,lat)
+#  colnames(latlon) <- c("lon","lat")
+#  return(as.data.frame(latlon))
+#}
+#getdates <- function(occurrence_data) {
+#  dates_str = lapply(occurrence_data[,"eventDate"], as.character)
+#  codes <- dates_str 
+#  dates <- t(sapply(codes,substring,first=c(1,6,9),last=c(4,7,10)))
+#  colnames(dates) <- c("year","month","day")
+#  return(as.data.frame(dates,stringsAsFactors=FALSE))
+#}
+#great_circle_distance <- function(latlon1,latlon2,r) {
+#    phi1 <- latlon1['lat']*pi/180
+#    lam1 <- latlon1['lon']*pi/180
+#    phi2 <- latlon2['lat']*pi/180
+#    lam2 <- latlon2['lon']*pi/180
+#    r*atan(sqrt((cos(phi2)*sin(abs(lam2-lam1)))^2+(cos(phi1)*sin(phi2)-sin(phi1)*cos(phi2)*cos(abs(lam2-lam1)))^2)/(sin(phi1)*sin(phi2)+cos(phi1)*cos(phi2)*cos(abs(lam2-lam1))))
+#    #r*acos(sin(phi1)*sin(phi2)+cos(phi1)*cos(phi2)*cos(abs(lam2-lam1)))
+#}
+#sparsify <- function(latlon, delta) {
+#    latlon_sparse <- data.frame(lon=c(),lat=c())
+#    for (i in 1:nrow(latlon)) {
+#        if (nrow(latlon_sparse)>0) {
+#            if (all(apply(latlon_sparse,1,function(x) great_circle_distance(x, latlon[i,],6371)>delta))) {
+#                latlon_sparse <- rbind(latlon_sparse, data.frame(lon=latlon[i,'lon'],lat=latlon[i,'lat']))
+#            }
+#        } else {
+#            latlon_sparse <- rbind(latlon_sparse, data.frame(lon=latlon[i,'lon'],lat=latlon[i,'lat']))
+#        }
+#    }
+#    latlon_sparse
+#}
+#library(rgbif)
+#library(dismo)
+#library(raster)
+#library(rbison)
+#pipeline_dir <- "/home/cld/dotpipeR/dot/"
+#getSoilComp <- function(soilData,pt) {
+#  i <- which(sapply(1:length(soilData$spatial),function(i) gContains(soilData$spatial[i,],pt)))
+#  soilData$comp[with(soilData$comp,MUKEY==soilData$spatial[i,]$MUKEY),2]
+#}
+#rename_obj <- function(obj, new_names) {
+#  names(obj) <- new_names
+#  return(obj)
+#}
+digraph squash_bee_sdm_predictions_2050_rcp26 {
+    latlon_constraint [expression="expression(TRUE)"]
+
+    latlon_constraint -> squash_bee_sdm_pipeline 
+    squash_bee_sdm_pipeline [expression="eval.Pipeline(read.Pipeline(paste0(pipeline_dir,'squash_bee_sdm.dot')),cachedir=cachedir, latlon_constraint=latlon_constraint)"]
+
+    squash_bee_sdm_pipeline -> ext 
+    ext [expression="squash_bee_sdm_pipeline['ext']"]
+
+    squash_bee_sdm_pipeline -> hwsdNA_raster 
+    hwsdNA_raster [expression="squash_bee_sdm_pipeline['hwsdNA_raster']"]
+
+    squash_bee_sdm_pipeline -> model_eastern_nosquash_nosoil 
+    model_eastern_nosquash_nosoil [expression="squash_bee_sdm_pipeline['model_eastern_nosquash_nosoil']"]
+
+//    squash_bee_sdm_pipeline -> model_eastern_nosoil 
+//    model_eastern_nosoil [expression="squash_bee_sdm_pipeline['model_eastern_nosoil']"]
+
+    squash_bee_sdm_pipeline -> model_eastern_nosquash 
+    model_eastern_nosquash [expression="squash_bee_sdm_pipeline['model_eastern_nosquash']"]
+
+    rcp -> worldclim_2050_rcp26
+    year -> worldclim_2050_rcp26
+    worldclim_2050_rcp26 [expression="rename_obj(getData(name='CMIP5',var='bio',res=10, model='BC', rcp=rcp, year=year), paste0('bio',c(1:19)))"]
+
+    worldclim_2050_rcp26 -> worldclim_2050_rcp26_NA [name=x]
+    ext -> worldclim_2050_rcp26_NA
+    worldclim_2050_rcp26_NA [function=crop,y=ext]
+
+    worldclim_2050_rcp26_NA -> future_predictors_2050_rcp26
+    hwsdNA_raster -> future_predictors_2050_rcp26
+//    future_predictors_2050_rcp26 [function=identity];
+    future_predictors_2050_rcp26 [expression="stack(worldclim_2050_rcp26_NA,hwsdNA_raster)"];
+
+    future_predictors_2050_rcp26 -> dist_2050_rcp26_eastern_nosquash_nosoil [name=object]
+    model_eastern_nosquash_nosoil -> dist_2050_rcp26_eastern_nosquash_nosoil [name=model];
+    dist_2050_rcp26_eastern_nosquash_nosoil [function=predict, progress="''"];
+
+    future_predictors_2050_rcp26 -> dist_2050_rcp26_eastern_nosquash [name=object]
+    model_eastern_nosquash -> dist_2050_rcp26_eastern_nosquash [name=model];
+    dist_2050_rcp26_eastern_nosquash [function=predict, progress="''"];
+
+//    future_predictors_2050_rcp26 -> dist_2050_rcp26_eastern_nosoil [name=object]
+//    model_eastern_nosoil -> dist_2050_rcp26_eastern_nosoil [name=model];
+//    dist_2050_rcp26_eastern_nosoil [function=predict, progress="''"];
+}

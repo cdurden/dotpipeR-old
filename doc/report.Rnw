@@ -1,0 +1,92 @@
+\documentclass[a4paper]{article}
+
+\usepackage[hmargin=1cm,vmargin=1cm]{geometry}
+
+\title{}
+\author{}
+
+\begin{document}
+
+%\maketitle
+
+<<echo=FALSE, results=hide>>=
+library(xtable)
+library(workflow)
+library(arraydata)
+library(pipeR)
+source("~/projects/biology/src/microarray/R/mafn.R")
+owd = getwd()
+pipeline <- read.Pipeline("gse19029.dot")
+setwd("~/tmp")
+pipeline <- exec.pipe(pipeline)
+setwd(owd)
+@
+
+<<fig=TRUE, echo=FALSE>>=
+plot(pipeline)
+@
+
+<<echo=FALSE, results=tex>>=
+dimova_index <- pipeline['dimovaGenesIndex']$data
+arraydata <- pipeline['loessConservative']$data
+dimova_table <- pipeline['dimovaTable']$data
+dimova_subindex = unlist(dimova_index[intersect(names(dimova_index),rownames(dimova_table))])
+Y = M(arraydata)[dimova_subindex,]
+rownames(Y) = names(dimova_subindex)
+MLER = rowMeans(Y)
+p = t(apply(pipeline['ttests_welch']$data,2,function(x) {x$p}))
+p = t(p)
+coef = t(apply(pipeline['ttests_minvar']$data,2,function(x) {x$coef}))
+stats = data.frame(MLER=rowMeans(Y),p=p[dimova_subindex,],welchq=pipeline['welchQ']$data[dimova_subindex,1],coef[dimova_subindex,])
+colnames(stats)[4:5] = c("Sg/BD","Fb/BD")
+
+alpha =0.1
+
+stats_table = data.frame("q less than 0.1"=c(
+with(stats,sum(-MLER > 1 & (welchq < alpha),na.rm=TRUE)),
+with(stats,sum(abs(MLER) < 1 & welchq<alpha,na.rm=TRUE)),
+with(stats,sum(-MLER < -1 & welchq<alpha,na.rm=TRUE))
+),
+"q greater than 0.1"=c(
+with(stats,sum(-MLER > 1 & welchq>alpha,na.rm=TRUE)),
+with(stats,sum(abs(MLER) < 1 & welchq>alpha,na.rm=TRUE)),
+with(stats,sum(-MLER < -1 & welchq>alpha,na.rm=TRUE))
+))
+
+stats_table = cbind(stats_table,rowSums(stats_table))
+stats_table = rbind(stats_table,colSums(stats_table))
+colnames(stats_table)[3] = "totals"
+rownames(stats_table) = c('$\\gt 1$',"intermediate",'$\\lt -1$',"totals")
+xtable(stats_table,digits=0)
+@
+
+<<echo=FALSE, results=tex>>=
+print(xtable(stats[which(stats$welchq<0.1),4:5]))
+@
+
+%\includegraphics{../../presentation/images/DimovaSuppTable1A.png}
+%\includegraphics{../../presentation/images/DimovaSuppTable1B.png}
+%\includegraphics{../../presentation/images/DimovaSuppTable1C.png}
+
+<<fig=TRUE, echo=FALSE>>=
+x <- pipeline['dimovaRegression']$data
+layout(matrix(c(1, 2), 1, 2), width = c(8, 2))
+par(mar = c(4, 4, 5, 3))
+image(x,axes=FALSE,col=heat.colors(10),main="Regression coefficients against\n E2F family member RNAi profiles")
+axis(1,at=seq(0,1,length.out=nrow(x)),labels=rownames(x))
+axis(2,at=seq(0,1,length.out=ncol(x)),labels=c("Sg-BD","Sg-BD","Sg-BD","Fb-BD","Fb-BD"))
+par(mar = c(3, 0, 3, 3))
+sequence = seq(min(x),max(x),length.out=nrow(x))
+image(1,sequence,matrix(sequence,nrow=1,ncol=length(sequence)),col=heat.colors(10),axes=FALSE)
+axis(4,at=c(min(x),0,max(x)),labels=sprintf("%0.01f",c(min(x),0,max(x))))
+@
+
+<<echo=FALSE, results=tex>>=
+print(xtable(x))
+@
+
+%<<fig=TRUE, echo=FALSE>>=
+%plot(workflow['dimovaRegressionB']$models[[1]])
+%detach(workflow['dimovaRegressionB'])
+%@
+\end{document}

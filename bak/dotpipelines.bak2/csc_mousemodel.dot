@@ -1,0 +1,299 @@
+#library(GEOquery)
+#library(limma)
+#library(sva)
+#library(affy)
+#extractGeneSymbols <- function(fData) {
+#  field = fData[,'gene_assignment']
+#  if(is.factor(field)) {
+#    field = levels(field)[field]
+#  }
+#  unlist(lapply(strsplit(field," // "),"[",2))
+#}
+#match.ignore_case <- function(from_elmt,to) {
+# tolower(to) == tolower(from_elmt) 
+#}
+#mapVectors <- function(from,to,match_fn=get("=="),names_from=names(from),names_to=names(to)) {
+#  if(is.factor(to)) {
+#    to = levels(to)[to]
+#  }
+#  if(is.factor(from)) {
+#    from = levels(from)[from]
+#  }
+#  map <- sapply(from,function(from_elmt) {
+#    i = which(match_fn(from_elmt,to))
+#    if(!is.null(names_to)) {
+#      names(i) <- names_to[i]
+#    }
+#    return(i)
+#  })
+#  names(map) <- names_from
+#  return(map)
+#}
+#merge.by.map <- function(from,to,map,...) { #this only works if map is indexed by rownames of from
+#  if(!is.null(names(map))) {
+#    map_from_index <- names(map)
+#    to_plus_map_from_index <- data.frame(to,NA)
+#    for(i in map_from_index) {
+#      if(length(map[[i]])>0) {
+#        to_plus_map_from_index[map[[i]],ncol(to_plus_map_from_index)] <- i
+#      }
+#    }
+#    merge(x=from,y=to_plus_map_from_index,by.x=0,by.y=ncol(to)+1,...)[,2:(ncol(from)+ncol(to)+1)]
+#  }
+#}
+#loadInNewEnv <- function(file) {
+#  envir=new.env()
+#  load(file=file,envir=envir)
+#  return(envir)
+#}
+#mergeByMap <- function(from,to,map) { # 'map' is a list whose elements are vectors of indices in 'to' and whose names are the rownames of 'from'
+#  x0 <- cbind(from,names(map))
+#  colnames(x0) <- c(colnames(from),"index")
+#  y_index <- rep(NA,nrow(to))
+#  for(i in 1:length(map)) {
+#    y_index[map[[i]]] <- names(map)[i]
+#  }
+#  y0 <- cbind(to,y_index)
+#  colnames(y0) <- c(colnames(to),"index")
+#  merge(x0,y0,by="index")
+#}
+#unfactor <- function(x) {
+#  result <- c()
+#  for(i in 1:ncol(x)) {
+#    if(is.factor(x[,i])) {
+#      result = cbind(result,levels(x[,i])[x[,i]])
+#    } else {
+#      result = cbind(result,x[,i])
+#    }
+#  }
+#  result <- as.data.frame(result,stringsAsFactors=FALSE)
+#  dimnames(result) = dimnames(x)
+#  result
+#}
+#highVarianceFilter <- function(lm,n) {
+#  names(sort(lm$sigma,na.last=TRUE,decreasing=TRUE))[1:n]
+#}
+#fncomp <- function(x,fns,arglists=replicate(length(fns),list())) {
+#  result <- x
+#  for (i in 1:length(fns)) {
+#    fn <- fns[[i]];
+#    if (!is.function(fn)) {
+#      fn <- get(fn,mode="function")
+#    }
+#    arglist = pairlist(result)
+#    arglist = append(arglist,arglists[[i]])
+#    result <- do.call(fn,arglist);
+#  }
+#  return(result)
+#}
+#clean.args<-function(argstr,fn,exclude.repeats=FALSE,exclude.other=NULL, # from plotrix package
+# dots.ok=TRUE) {
+#
+# fnargs<-names(formals(fn))
+# if(length(argstr) > 0 && !("..." %in% fnargs && dots.ok)) {
+#  badargs<-names(argstr)[!sapply(names(argstr),"%in%",c(fnargs,""))]
+#  for(i in badargs) argstr[[i]]<-NULL
+# }
+# if(exclude.repeats) {
+#  ntab<-table(names(argstr))
+#  badargs<-names(ntab)[ntab > 1 & names(ntab) != ""]
+#  for (i in badargs) argstr[[i]]<-NULL
+# }
+# for(i in exclude.other) argstr[[i]]<-NULL
+# argstr
+#}
+#
+#untar_and_list <- function(...) {
+#  argstr=append(list(list=FALSE),list(...))
+#  if(do.call(untar,clean.args(argstr,fn=untar,exclude.repeats=TRUE))==0) {
+#    argstr=append(list(list=TRUE),list(...))
+#    return(do.call(untar,clean.args(argstr,fn=untar,exclude.repeats=TRUE)))
+#  }
+#}
+#
+#
+  
+
+digraph csc_mousemodel {
+  gse10327_affy [call=getGEOSuppFiles,GEO="'GSE10327'"]
+// see https://stat.ethz.ch/pipermail/bioconductor/2012-February/043440.html
+// regarding getting an AffyBatch object from a GEO accession number
+
+  gse10327_affy_archive [call=fncomp,fns="c('rownames','[')",arglists="list(list(),list(i=1))"]
+  gse10327_affy -> gse10327_affy_archive [arg=x]
+  gse10327_affy_archive_dir [call=dirname]
+  gse10327_affy_archive -> gse10327_affy_archive_dir [arg=path]
+ 
+  gse10327_affy_extracted_files [call=untar_and_list]
+  gse10327_affy_archive_dir -> gse10327_affy_extracted_files [arg=exdir]
+  gse10327_affy_archive -> gse10327_affy_extracted_files [arg=tarfile]
+  gse10327_affy_celfiles [call="list.celfiles"]
+  gse10327_affy_archive_dir -> gse10327_affy_celfiles
+  gse10327_affy_celfile_paths [call="file.path"]
+  gse10327_affy_celfiles -> gse10327_affy_celfile_paths [arg=b]
+  gse10327_affy_archive_dir -> gse10327_affy_celfile_paths [arg=a]
+
+/*
+  gse10327_AffyBatch [call="read.affybatch"]
+  gse10327_affy_celfile_paths -> gse10327_AffyBatch [arg=filenames]
+  gse10327_calls [call="mas5calls"]
+  gse10327_AffyBatch -> gse10327_calls [arg=object]
+*/
+
+//http://bcloud.org/ge/users/gex/index/computer.htm
+//Liu, W. M. and Mei, R. and Di, X. and Ryder, T. B. and Hubbell, E.
+//     and Dee, S. and Webster, T. A. and Harrington, C. A. and Ho, M. H.
+//     and Baid, J. and Smeekens, S. P. (2002) Analysis of high density
+//     expression microarrays with signed-rank call algorithms,
+//     Bioinformatics, 18(12), pp. 1593-1599.
+//The statistical method for making detection calls is described in the
+//'Detection calls' subsection of the 'Algorithms' section in the above paper
+//The null hypothesis is that the median 'discrimination score' for a probeset
+//exceeds a value $\tau$ chosen so to achieve a balance between sensitivity and specificity:
+//$H_0: median(R_i) = median(\frac{PM_i - MM_i}{PM_i + MM_i}) > \tau$.
+//p-value thresholds for $H_0$ are also chosen to balance sensitivity and specificity.
+
+
+//  gse10327_affy_files [call=untar,list=TRUE]
+//  gse10327_affy -> gse10327_affy_files [
+  gse10327 [call=getGEO,GEO="'GSE10327'"]
+  gse10327_1 [call="[[",i=1]
+  gse10327 -> gse10327_1
+  gse10327_pData [call=pData]
+  gse10327_1 -> gse10327_pData [arg=object]
+  gse10327_exprs [call=exprs]
+  gse10327_1 -> gse10327_exprs [arg=object]
+  gse10327_fData [call=fData]
+  gse10327_1 -> gse10327_fData [arg=object]
+  gse10327_formula [call="as.formula",object="'~characteristics_ch1'"]
+//  gse10327_design [call="model.matrix",object="as.formula(~characteristics_ch1)"]
+  gse10327_design [call="model.matrix"]
+  gse10327_formula -> gse10327_design [arg="object"]
+  gse10327_pData -> gse10327_design [arg=data]
+  gse10327_lm [call="lmFit"]
+  gse10327_design -> gse10327_lm [arg=design]
+  gse10327_exprs -> gse10327_lm [arg=object]
+  gse10327_log_exprs [call=log]
+  gse10327_exprs -> gse10327_log_exprs [arg=x]
+//  gse10327_eBayes [call="eBayes"]
+//  gse10327_lm -> gse10327_eBayes [arg=fit]
+//  gse10327_topTable [call=topTable,coef=2,adjust="'BH'","p.value"=0.05,number=100]
+//  gse10327_eBayes -> gse10327_topTable [arg=fit]
+//  gse10327_topTable_annotated [call=merge,by="'ID'"]
+//  gse10327_topTable -> gse10327_topTable_annotated [arg=x]
+
+//  gse10327_topTable_identifiers [call=subset,select="quote(ID)"]
+//  gse10327_topTable -> gse10327_topTable_identifiers [arg=x]
+
+  gse10327_topVariance_identifiers [call=highVarianceFilter,n=100]
+  gse10327_lm -> gse10327_topVariance_identifiers [arg=lm]
+  gse10327_topVariance_exprs [call="[",j=TRUE]
+  gse10327_exprs -> gse10327_topVariance_exprs
+  gse10327_topVariance_identifiers -> gse10327_topVariance_exprs [arg=i]
+
+  gse10327_topVariance_genesymbols [call="[",j="'Gene Symbol'"]
+  gse10327_topVariance_identifiers -> gse10327_topVariance_genesymbols [arg=i]
+  gse10327_fData -> gse10327_topVariance_genesymbols
+ 
+//  gse10327_fData -> gse10327_topTable_annotated [arg=y]
+
+//  gse12992 [call=getGEO,GEO="'GSE12992'"]
+  gse41717 [call=getGEO,GEO="'GSE41717'"]
+  gse41717_1 [call="[[",i=1]
+  gse41717 -> gse41717_1
+  gse41717_pData [call=pData]
+  gse41717_1 -> gse41717_pData [arg=object]
+  gse41717_exprs [call=exprs]
+  gse41717_1 -> gse41717_exprs [arg=object]
+  gse41717_fData [call=fData]
+  gse41717_1 -> gse41717_fData [arg=object]
+//  gse41717_formula [call="as.formula",object="'~characteristics_ch1'"]
+//  gse41717_design [call="model.matrix"]
+//  gse41717_formula -> gse41717_design [arg="object"]
+  gse41717_design [call="model.matrix",object="quote(~characteristics_ch1)"]
+  gse41717_pData -> gse41717_design [arg=data]
+  gse41717_lm [call="lmFit"]
+  gse41717_design -> gse41717_lm [arg=design]
+  gse41717_exprs -> gse41717_lm [arg=object]
+//  gse41717_eBayes [call="eBayes"]
+//  gse41717_lm -> gse41717_eBayes [arg=fit]
+//  gse41717_topTable [call=topTable,coef=2,adjust="'BH'","p.value"=0.05,number=100]
+//  gse41717_eBayes -> gse41717_topTable [arg=fit]
+//  gse41717_topTable_annotated [call=merge,by="'ID'"]
+//  gse41717_topTable -> gse41717_topTable_annotated [arg=x]
+//  gse41717_fData -> gse41717_topTable_annotated [arg=y]
+
+//  gse41717_topTable_identifiers [call=subset,select="quote(ID)"]
+//  gse41717_topTable -> gse41717_topTable_identifiers [arg=x]
+
+//  gse41717_topVariance_identifiers [call=highVarianceFilter,n=100]
+//  gse41717_lm -> gse41717_topVariance_identifiers [arg=lm]
+//  gse41717_topVariance_exprs [call="[",j=TRUE]
+//  gse41717_exprs -> gse41717_topVariance_exprs [arg=x]
+//  gse41717_topVariance_identifiers -> gse41717_topVariance_exprs [arg=i]
+  
+  gse10327_topVariance_map_to_gse41717 [call="mapVectors",match_fn="quote(match.ignore_case)"]
+  gse10327_topVariance_genesymbols -> gse10327_topVariance_map_to_gse41717 [arg=from]
+  gse41717_genes -> gse10327_topVariance_map_to_gse41717 [arg=to]
+  gse10327_topVariance_identifiers -> gse10327_topVariance_map_to_gse41717 [arg=names_from]
+
+  gse10327_topVariance_exprs_merged_with_gse41717 [call="merge.by.map"]
+  gse10327_log_exprs -> gse10327_topVariance_exprs_merged_with_gse41717 [arg=from]
+  gse41717_exprs -> gse10327_topVariance_exprs_merged_with_gse41717 [arg=to]
+  gse10327_topVariance_map_to_gse41717 -> gse10327_topVariance_exprs_merged_with_gse41717 [arg=map]
+
+  gse10327_gse41717_merged_pData [call="merge",all=TRUE]
+  gse10327_pData -> gse10327_gse41717_merged_pData [arg=x]
+  gse41717_pData -> gse10327_gse41717_merged_pData [arg=y]
+
+  gse10327_gse41717_merged_pData -> ComBat_model [arg=data]
+  batch_covariates [call="with", expr="quote(platform_id)"]
+  gse10327_gse41717_merged_pData -> batch_covariates [arg="data"]
+  
+  ComBat_model [call="model.matrix",object="quote(~1)"]
+ 
+  gse10327_topVariance_exprs_merged_with_gse41717_ComBat [call="ComBat"]
+  gse10327_topVariance_exprs_merged_with_gse41717 -> gse10327_topVariance_exprs_merged_with_gse41717_ComBat [arg=dat]
+  ComBat_model -> gse10327_topVariance_exprs_merged_with_gse41717_ComBat [arg=mod]
+  batch_covariates -> gse10327_topVariance_exprs_merged_with_gse41717_ComBat [arg=batch]
+
+//  leading_combined_env [call=loadInNewEnv,file="'combined.RData'"]
+//  leading_combined_data [call="$",i="'combined.expr'"]
+//  leading_combined_env -> leading_combined_data [arg=x]
+//  leading_edge_genes [call=rownames]
+
+//  leading_combined_data -> leading_edge_genes [arg=x]
+  gse41717_genes [call=extractGeneSymbols]
+  gse41717_fData -> gse41717_genes [arg=fData]
+  gse10327_genes [call="[",i="'Gene Symbol'"]
+  gse10327_fData -> gse10327_genes
+
+//  map41717 [call="mapVectors"]
+//  gse41717_genes -> map41717 [arg=from]
+//  leading_edge_genes -> map41717 [arg=to]
+
+//  leading_combined_data_plus_gse41717 [call="mergeByMap"]
+//  gse41717_exprs -> leading_combined_data_plus_gse41717 [arg=from]
+//  leading_combined_data -> leading_combined_data_plus_gse41717 [arg=to]
+//  map41717 -> leading_combined_data_plus_gse41717 [arg=map]
+//  leading_combined_data_plus_gse41717_noindex [call="subset",select="quote(-index)"]
+//  leading_combined_data_plus_gse41717 -> leading_combined_data_plus_gse41717_noindex [arg=x]
+
+//  gse41717_topTable_genes [call="extractGeneSymbols"]
+//  gse41717_topTable_annotated -> gse41717_topTable_genes [arg="fData"]
+//  map41717to10327 [call="mapVectors"]
+//  gse41717_topTable_genes -> map41717to10327 [arg=from]
+//  gse10327_genes -> map41717to10327 [arg=to]
+//
+//  gse10327_merged_to_gse41717_topTable [call="mergeByMap"]
+//  gse41717_exprs -> leading_combined_data_plus_gse41717 [arg=from]
+//  leading_combined_data -> leading_combined_data_plus_gse41717 [arg=to]
+//  map41717 -> leading_combined_data_plus_gse41717 [arg=map]
+  
+}
+
+##gse41717_genes <- extractGeneSymbols(fData(pipeline['gse41717'][[1]][20000:20050,]))
+##gse10327_genes <- fData(pipeline['gse10327'][[1]])[,"Gene Symbol"]
+##leading_edge_genes <- rownames(pipeline['leading_combined']$combined.expr)
+##map <- mapVectors(from,to)
+##map <- mapVectors(gse41717_genes,leading_edge_genes)

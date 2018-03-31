@@ -1,0 +1,12 @@
+Package: dotpipeR 
+Type: Package
+Title: R package for computational pipelines using the DOT grammar
+Version: 0.99.0
+Date: 2013-10-15
+Authors@R: c(person("Christopher", "Durden", role = c("aut", "cre"), email = "cdurden@gmail.com"))
+Author: Christopher Durden
+Maintainer: Christopher Durden <cdurden@gmail.com>
+Description: dotpipeR is an interpreter for computational pipelines written using the DOT grammar. The flow of information is constrained by the topology of the pipeline's graph structure, which can be used to assist analysis and design of complicated computational pipelines.
+License: GPL-2
+Imports: digest, graph, methods
+Suggests: Rgraphviz

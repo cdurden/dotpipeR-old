@@ -1,0 +1,13 @@
+#library(gdata)
+#subarray <- function(x,i,j,colnames=1,rownames=1) {
+#  out <- x[i,j]
+#  colnames(out) <- as.character(x[colnames,j])
+#  rownames(out) <- as.character(x[i,rownames])
+#  return(out)
+#}
+digraph incomedistribution {
+  maleData [function="read.xls", xls="'/home/cld/projects/systematics/data/income_male_2011.xls'", "as.is"=TRUE]
+  femaleData [function="read.xls", xls="'/home/cld/projects/systematics/data/income_female_2011.xls'", "as.is"=TRUE]
+  maleTotals [function="subarray",i="8:52", j="2:3", rownames=1,colnames=6] 
+  maleData -> maleTotals [name="x"]
+}

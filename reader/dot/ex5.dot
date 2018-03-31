@@ -1,0 +1,9 @@
+graph 1 {
+rawdata0 [call="loadGenepix",
+           probes_file="arrays/brian/GSE19029/v4.3_genelist_L1.1.1.10_master.txt", targets_file="arrays/brian/GSE19029/targets.txt"]
+a [call="read.delim",file="a.txt",header=FALSE]
+b [call="read.delim",file="b.txt",header=FALSE]
+c [call=sum]
+b->c [arg=a]
+a->c [arg=b]
+}

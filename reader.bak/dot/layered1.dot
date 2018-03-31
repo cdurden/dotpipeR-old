@@ -1,0 +1,5 @@
+graph layered {
+  1 [layer=1]
+  5 [layer=2]
+  1->5
+}

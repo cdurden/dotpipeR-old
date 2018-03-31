@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      metal:define-macro="layout">
+<head>
+    <title>DOTpipeR - ${title}</title>
+
+  <tal:block tal:condition="request.context.auth.persona">
+  <script type="text/javascript"
+    src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js">
+  </script>
+  <script src="https://login.persona.org/include.js"></script>
+  <script >${request.persona_js}</script>
+  </tal:block>
+
+    <more metal:define-slot="head-more"></more>
+    <link rel="stylesheet"
+          href="${request.static_url('tutorial:static/css/main.css')}"/>
+</head>
+<body>
+<div id="main">
+    <div id="loginout">
+    <tal:block metal:define-slot="loginout">
+      <tal:block condition="request.context.user is not None">
+      <a tal:condition="request.context.auth.internal" href="${request.application_url}/logout">Logout</a>
+      <tal:block tal:condition="request.context.auth.persona">
+      <div>
+        ${request.persona_button}
+      </div>
+      </tal:block>
+
+      </tal:block>
+    </tal:block>
+    </div>
+        <a href="${request.route_url('browse')}">
+            <img src="${request.static_url('tutorial:static/images/dotpipeRlogo.png')}"
+                 alt="DOTpipeR"/></a> <a href="${request.static_url('tutorial:static/DOTpipeR.html')}">About DOTpipeR</a>
+    <div id="status">
+    <tal:block metal:define-slot="status">
+    </tal:block>
+    </div>
+    <tal:block metal:define-slot="title">
+    <h1>${title}</h1>
+    </tal:block>
+    <div id="toolbox"> 
+    <tal:block metal:define-slot="nav">
+    </tal:block>
+    </div>
+    <div id="content">
+      <tal:block metal:define-slot="content">
+      </tal:block>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+#main {
+    float:none;
+}
+#content {
+    float:none;
+    z-index: 0;
+    margin-right: 200px;
+    top: 100px;
+    width:100%;
+}
+#pipeline {
+    overflow: scroll;
+    margin-right: 200px;
+    border-right: solid 1px #000000;
+}
+#toolbox {
+    float: right;
+    width: 180px;
+    margin-right: 10px;
+    padding-left: 10px;
+}
+
+#toolbox a,select,button {
+    display:block;
+    width: 100%;
+}
+
+.right {
+    float: right;
+}

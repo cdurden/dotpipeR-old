@@ -1,0 +1,7 @@
+digraph helloWorld {
+  hello [function=readLines,con="'hello.txt'"] // comment
+  world [function=c,text="'world!'"]
+  hello_world [function=paste,"sep"="', '",""=TRUE,""=FALSE]
+  world->hello_world
+  hello->hello_world
+}

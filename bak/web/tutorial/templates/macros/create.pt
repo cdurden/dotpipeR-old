@@ -1,0 +1,80 @@
+
+<metal:create_head define-macro="create_head">
+  <script>
+  $(function() {
+    var button = $("#create_button");
+
+    $("#create_button").button().click(function() {
+      $("#create_div").dialog("open");
+    });
+
+    $("#create_form").validate({
+       rules: {
+         name: {
+           required: true,
+           minlength: 1
+         }
+       },
+       messages: {
+         name: {
+           required: "The pipeline must have a name, some sequence of characters",
+           minlength: jQuery.format("At least {0} characters required!")
+         }
+       },
+       invalidHandler: function(event, validator) {
+       },
+       submitHandler: function(form) {
+         form.submit();
+         $("#create_div").dialog( "close" );
+       }
+    });
+
+    $("#create_div").dialog({
+      autoOpen: false, modal: true, overflow: 'auto',
+      buttons: {
+        "Create": function() {
+          var form = $('#create_form', this);
+          $(form).submit();
+              url = form.attr( 'action' );
+          $.ajax({
+              processData: false,
+              contentType: false,
+              type: "POST",
+              url: url,
+              data: formData,
+              success: function(data){
+                window.location.href = data.url;
+              },
+              dataType: "json",
+          });
+      },
+      Cancel: function() {
+        $( this ).dialog( "close" );
+      }
+      },
+      position: { my: "left top", at: "left bottom", of: button },
+      close: function() {
+      }
+    });
+  });
+  </script>
+</metal:create_head>
+
+<metal:create_form define-macro="create_form">
+<div id="create_div" title="Create new pipeline">
+  <form id="create_form" action="${structure: request.route_url('create')}" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+    <label for="name">Name of pipeline:</label>
+    <input id="name" name="name" type="text" value="" />
+    <label for="dot_file">Upload a dot file:</label>
+    <input id="dot_file" name="dot_file" type="file" value="" />
+    <label for="packages">Select R package dependencies:</label>
+  <div><input style="display:inline" name="packages" type="checkbox" value="richest">richest</div>
+  <div><input style="display:inline" name="packages" type="checkbox" value="SPECIES">SPECIES</div>
+  <div><input style="display:inline" name="packages" type="checkbox" value="stats">stats</div>
+  <div><input style="display:inline" name="packages" type="checkbox" value="utils">utils</div>
+  <div><input style="display:inline" name="packages" type="checkbox" value="XML">XML</div>
+  <div><input style="display:inline" name="packages" type="checkbox" value="RCurl">RCurl</div>
+  </form>
+</div>
+<button id="create_button">Create new pipeline ...</button>
+</metal:create_form>

@@ -1,0 +1,19 @@
+<div metal:use-macro="view.layout">
+<tal:block metal:fill-slot="head-more">
+<script metal:use-macro="view.macros['jquery']"></script>
+<script metal:use-macro="view.pipeline_macros['jquery_show_svg']"></script>
+<script metal:use-macro="view.pipeline_macros['jquery_link_nodes_to_data']"></script>
+<div metal:use-macro="view.pipeline_macros['routes_to_node_data']"></div>
+</tal:block>
+<tal:block metal:fill-slot="nav">
+<a href="${structure: request.route_url('view',pipeline_id=pipeline.id)}">View pipeline</a>
+</tal:block>
+<div metal:fill-slot="content">
+<p>Execution status: ${structure: pipeline.exec_status}</p>
+<p tal:condition="python: pipeline.exec_status == 'error'">Error message: ${structure: pipeline.error_msg}</p>
+<p><a href="${structure: request.route_url('run',pipeline_id=pipeline.id)}">Initiate execution</a></p>
+<div id="pipeline">
+</div>
+</div>
+<p tal:condition="python: len(dot.get_nodes()) == 0">This pipeline is empty. Click edit to add nodes, etc.</p>
+</div>

@@ -1,0 +1,63 @@
+#tifdir <- "/home/cld/squash_bee_data/squash/cropscape_images/"
+#rowBufferSize <- 1000
+#rasterFilesTable <- paste0(tifdir,"rasterFiles.csv")
+#library(raster)
+#library(plyr)
+#library(geosphere)
+#library(maptools)
+#extractCropCells <- function(r) {
+#  nCol <- ncol(r)
+#  ldply(lapply(seq(1,nrow(r),by=rowBufferSize),function(i) { values <- getValues(r,i,rowBufferSize); cells <- which(values!=0); data.frame(cropId=values[cells],cell=(i-1)*nCol+cells)}))
+#}
+#joinSpatialPoints <- function(x) {
+#  res <- x[[1]]
+#  i <- 1
+#  while (i < length(x)) {
+#    res <- spRbind(res,x[[i+1]])
+#    i <- i+1
+#  }
+#  res
+#}
+digraph squash_distribution {
+  rasterFiles [function="read.csv",file="rasterFilesTable", stringsAsFactors="FALSE"] 
+
+  rasterFiles -> rasterObjects
+  rasterObjects [expression="lapply(paste0(tifdir,rasterFiles[,'tiffile']), raster)"]
+
+  rasterObjects -> cropCells
+  cropCells [expression="lapply(rasterObjects, extractCropCells)"] 
+
+  rasterObjects -> cropSpatialPoints
+  cropCells -> cropSpatialPoints
+  cropSpatialPoints [expression="lapply(1:length(rasterObjects), function(i) { xyFromCell(object=rasterObjects[[i]],unlist(cropCells[[i]]['cell']),spatial=TRUE) })"]
+  
+  rasterFiles -> pumpkinSpatialPoints2014
+  cropSpatialPoints -> pumpkinSpatialPoints2014
+  cropCells -> pumpkinSpatialPoints2014
+  pumpkinSpatialPoints2014 [expression="spTransform(joinSpatialPoints(lapply(which(rasterFiles[,'year']==2014), function(i) cropSpatialPoints[[i]][which(cropCells[[i]]['cropId']==229)])), CRS('+proj=longlat'))"]
+
+  pumpkinSpatialPoints2014 -> pumpkinDistances
+  pumpkinDistances [expression="distm(c(-78.692528,35.771155), pumpkinSpatialPoints2014, fun = distHaversine)[1,]"]
+
+  pumpkinSpatialPoints2014 -> closestPumpkins
+  pumpkinDistances -> closestPumpkins
+  closestPumpkins [expression="coordinates(pumpkinSpatialPoints2014[order(pumpkinDistances)[1:100]])"]
+
+  rasterFiles -> squashSpatialPoints2014
+  cropSpatialPoints -> squashSpatialPoints2014
+  cropCells -> squashSpatialPoints2014
+  squashSpatialPoints2014 [expression="spTransform(joinSpatialPoints(lapply(which(rasterFiles[,'year']==2014), function(i) cropSpatialPoints[[i]][which(cropCells[[i]]['cropId']==222)])), CRS('+proj=longlat'))"]
+
+  squashSpatialPoints2014 -> cucurbitSpatialPoints2014 [name="obj"]
+  pumpkinSpatialPoints2014 -> cucurbitSpatialPoints2014 [name="x"]
+  cucurbitSpatialPoints2014 [function="spRbind"]
+
+
+  squashSpatialPoints2014 -> squashDistances
+  squashDistances [expression="distm(c(-78.692528,35.771155), squashSpatialPoints2014, fun = distHaversine)[1,]"]
+
+  squashSpatialPoints2014 -> closestSquash
+  squashDistances -> closestSquash
+  closestSquash [expression="coordinates(squashSpatialPoints2014[order(squashDistances)[1:100]])"]
+
+}

@@ -1,0 +1,80 @@
+#require(rgdal)
+#library(gdata)
+#library(maptools)
+#soildir <- "/home/cld/squash_bee_data/soil/soils/"
+#soilPathsTable <- paste0(soildir,"soilPaths.csv")
+//#importSoilData <- function(soilPath, shapefile) {
+//#  spdf <- readOGR(dsn = paste0(soilPath,"/spatial"), layer = shapefile)
+//#  comp <- read.table(paste0(soilPath,"/tabular/comp.txt"),sep="|")
+//#  colnames(comp)[c(2,84,108)] <= c("COMPPCT_R","ORDER","MUKEY")
+//#  comp[,108] <- as.factor(comp[,108])
+//#  map <- mapLevels(comp[,108])
+//#  mapLevels(x=spdf$MUKEY) <- map
+//#  soilData <- list(spatial=spdf,comp=comp)
+//#  soilData
+//#}
+#getSoilComp <- function(lonlat,soilData) {
+#  pt <-SpatialPoints(lonlat, proj4string=soilData$spatial@proj4string)
+#  i <- which(sapply(1:length(soilData$spatial),function(i) gContains(soilData$spatial[i,],pt)))
+#  comppct_r <- soilData$comp[with(soilData$comp,MUKEY==soilData$spatial[i,]$MUKEY),2]
+#  names(comppct_r) <- soilData$comp[with(soilData$comp,MUKEY==soilData$spatial[i,]$MUKEY),84]
+#  soilData$comp[with(soilData$comp,MUKEY==soilData$spatial[i,]$MUKEY),2]
+#}
+#importSoilData <- function(soilPath) {
+#  spdf <- readOGR(dsn = paste0(soildir,"/",soilPath[1],"/spatial"), layer = as.character(soilPath[2]))
+#  spdf@polygons <- lapply(spdf@polygons, function(p) {p@ID <- paste0(soilPath[3],p@ID);p})
+#  row.names(spdf@data) <- unlist(lapply(spdf@polygons, function(p) p@ID))
+#  spdf@data$MUKEY <- as.factor(paste0(soilPath[3],spdf@data$MUKEY))
+#  comp <- read.table(paste0(soildir,"/",soilPath[1],"/tabular/comp.txt"),sep="|")
+#  colnames(comp)[c(2,84,108)] <- c("COMPPCT_R","ORDER","MUKEY")
+#  comp[,108] <- as.factor(paste0(soilPath[3],comp[,108]))
+#  map <- mapLevels(comp[,108])
+#  mapLevels(x=spdf$MUKEY) <- map
+#  soilData <- list(spatial=spdf,comp=comp)
+#  soilData
+#}
+#soilSpatialComposition <- function(soilData) {
+#  soilcomppcts <- list()
+#  for (i in 1:length(soilData$spatial)) {
+#    soilcomppcts[[i]] <- data.frame(matrix(soilData$comp[with(soilData$comp,MUKEY==soilData$spatial[i,]$MUKEY),2],nrow=1))
+#    colnames(soilcomppcts[[i]]) <- soilData$comp[with(soilData$comp,MUKEY==soilData$spatial[i,]$MUKEY),84]
+#    j <- which(colnames(soilcomppcts[[i]])=="")
+#    colnames(soilcomppcts[[i]])[j] <- "Water"
+#    soilcomppcts[[i]] <- data.frame(as.list(tapply(unlist(soilcomppcts[[i]]), names(soilcomppcts[[i]]), sum)))
+#  }
+#  soilcomppcts_df <- rbind.fill(soilcomppcts)
+#  soilcomppcts_df[is.na(soilcomppcts_df)] <- 0
+#  soilData$spatial@data <- cbind(soilData$spatial@data,soilcomppcts_df)
+#  soilData$spatial
+#}
+#library(plyr)
+#joinSpatialObjects <- function(x) {
+#  res <- x[[1]]
+#  i <- 1
+#  while (i < length(x)) {
+#    res <- spRbind(res,x[[i+1]])
+#    i <- i+1
+#  }
+#  res
+#}
+#rasterizeToStack <- function(x,y,fields,...) {
+#  rs <- stack()
+#  for (field in fields) {
+#    rs <- stack(rs,rasterize(x,y,field=field,...))
+#  }
+#  rs
+#}
+digraph ssurgo {
+  soilPaths [function="read.csv",file="soilPathsTable", stringsAsFactors="FALSE"]
+  soilPaths -> soilDatasets
+  soilDatasets [expression="apply(soilPaths,1,importSoilData)"]
+  soilDatasets -> soilData
+  soilData [expression="list(spatial=joinSpatialObjects(lapply(soilDatasets, function(dataset) dataset$spatial)),comp=ldply(lapply(soilDatasets, function(dataset) dataset$comp)))"]
+  soilData -> soilSpatialDataWithComposition [name="soilData"]
+  soilSpatialDataWithComposition [function="soilSpatialComposition"]
+  
+  //bioclimRaster [function=getData,name="'worldclim'",var="'bio'",res=10]
+  //soilSpatialDataWithComposition -> soilCompositionRasterized [name="x"]
+  //bioclimRaster -> soilCompositionRasterized [name="y"]
+  //soilCompositionRasterized [function="rasterizeToStack", fields="c('Entisols','Histosols')"]
+}

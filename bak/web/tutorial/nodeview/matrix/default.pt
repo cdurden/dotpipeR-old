@@ -1,0 +1,16 @@
+        <tal:block define="global max_rows 100"/>
+        <p tal:condition="python: node.data.nrow > max_rows">The data table has been truncated to <span tal:content="max_rows">100</span> lines</p>
+        <table tal:condition="python: node_class == 'matrix'">
+        <tr tal:condition="python: node.data.colnames != NULL">
+            <tal:block condition="python: node.data.rownames != NULL">
+            <th/>
+            </tal:block>
+            <th tal:repeat="j python: range(1,node.data.ncol+1)" tal:content="python: node.data.colnames[j-1]">col_j</th>
+        </tr>
+        <tr tal:repeat="i python: range(1,min(max_rows,node.data.nrow)+1)">
+            <th tal:condition="python: node.data.rownames != NULL" tal:content="python: node.data.rownames[i-1]">row_i</th>
+            <td tal:repeat="j python: range(1,node.data.ncol+1)" tal:content="python: node.data.rx(i,j)[0]">
+             0
+            </td> 
+        </tr>
+        </table>

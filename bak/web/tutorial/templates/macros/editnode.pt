@@ -1,0 +1,120 @@
+
+
+<metal:edit_node_modal_form_head define-macro="edit_node_modal_form_head">
+<link rel="stylesheet" href="/resources/demos/style.css" />
+  <style>
+    body { font-size: 62.5%; }
+    label, input { display:inline; }
+    input.text { margin-bottom:12px; width:95%; padding: .4em; }
+    fieldset { padding:0; border:0; margin-top:25px; }
+    h1 { font-size: 1.2em; margin: .6em 0; }
+    div#users-contain { width: 350px; margin: 20px 0; }
+    div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+    div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+    .ui-dialog .ui-state-error { padding: .3em; }
+    .validateTips { border: 1px solid transparent; padding: 0.3em; }
+  </style>
+
+  <script>
+  $(function() {
+    var node_id = $( "#edit_node_id" ),
+      node_call = $( "#edit_node_call" ),
+      allFields = $( [] ).add( node_id ).add( node_call ),
+      tips = $( ".validateTips" );
+    var button = $("#addnode");
+ 
+    function updateTips( t ) {
+      tips
+        .text( t )
+        .addClass( "ui-state-highlight" );
+      setTimeout(function() {
+        tips.removeClass( "ui-state-highlight", 1500 );
+      }, 500 );
+    }
+ 
+    function checkLength( o, n, min, max ) {
+      if ( o.val().length > max || o.val().length < min ) {
+        o.addClass( "ui-state-error" );
+        updateTips( "Length of " + n + " must be between " +
+          min + " and " + max + "." );
+        return false;
+      } else {
+        return true;
+      }
+    }
+ 
+    function checkRegexp( o, regexp, n ) {
+      if ( !( regexp.test( o.val() ) ) ) {
+        o.addClass( "ui-state-error" );
+        updateTips( n );
+        return false;
+      } else {
+        return true;
+      }
+    }
+ 
+    $( "#edit_node_form" ).dialog({
+      autoOpen: false,
+      height: 300,
+      width: 350,
+      modal: true,
+      buttons: {
+        "Add node to pipeline": function() {
+          var bValid = true;
+          allFields.removeClass( "ui-state-error" );
+ 
+          if ( bValid ) {
+            var $form = $('form', this ),
+                node_id = $form.find( 'input[name="node_id"]' ).val(),
+                node_call = $form.find( 'input[name="node_call"]' ).val(),
+                url = $form.attr( 'action' );
+           
+            /* Send the data using post */
+            var posting = $.post( url, { node_id: node_id, node_call: node_call } );
+            $( this ).dialog( "close" );
+
+            posting.done(function( data ) {
+              svgdom = $('svg',data).get(0);
+              $("#pipeline").empty().append( svgdom );
+              reload_select_nodes();
+              link_nodes_to_select(svgdom);
+            });
+          }
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      },
+      position: { my: "left top", at: "left bottom", of: button },
+      close: function() {
+        allFields.val( "" ).removeClass( "ui-state-error" );
+      }
+    });
+ 
+    $( "#editnode" )
+      .button()
+      .click(function() {
+        $( "#edit_node_form" ).dialog( "open" );
+      });
+  });
+  </script>
+</metal:edit_node_modal_form_head>
+
+
+<metal:edit_node_form define-macro="edit_node_form">
+<div id="edit_node_form" title="Edit node">
+  <form action="${structure: request.route_url('editnode',pipeline_id=pipeline.id)}">
+  <fieldset>
+    <label for="node_id">Identifier</label>
+    <input type="text" name="node_id" id="edit_node_id" class="text ui-widget-content ui-corner-all" />
+    <label for="node_call">Function call</label>
+    <input type="text" name="node_call" id="edit_node_call" value="" class="text ui-widget-content ui-corner-all" />
+    <label for="node_fn_params">Function parameters</label>
+    <input type="text" name="node_call" id="edit_node_call" value="" class="text ui-widget-content ui-corner-all" />
+  </fieldset>
+  </form>
+</div>
+ 
+<button id="editnode">Edit node ...</button>
+</metal:edit_node_form>
+

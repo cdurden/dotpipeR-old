@@ -1,0 +1,370 @@
+<metal:add_node_head define-macro="add_node_head">
+<script>
+  var i = 0;
+  var n = 0;
+  function add_param(name,val,type) {
+    var params_div = $("#fn_params");
+
+    param_container = $("<div>", { css: { 'padding': '0px 0px 5px 0px', 'margin': '0px 0px 5px 0px', 'border-bottom': '1px dotted grey', width:'100%', overflow:'auto' } }).appendTo(params_div);
+    $(param_container).data("index", i);
+
+    param_name_div = $('<div>', { css: { float:'left', width:'25%' } }).appendTo(param_container);
+    param_val_div = $("<div>", {css: { float: 'left', width:'75%' } }).appendTo(param_container);
+    param_remove_div = $("<div>", {id: "param_remove"+i, css: { width:'100%', margin:'5px 5px 5px 0px' } }).appendTo(param_container);
+    $("<label>", { for: "param_name"+i}).text("Name:").appendTo(param_name_div);
+    param_name = $("<input>", { type: "text", name: "fn_param_names[]", id: "param_name"+i, value: name, class: "text ui-widget-content ui-corner-all", css: { width:'100%' } }).appendTo($('<div>').css( 'margin-right','5px' ).appendTo(param_name_div)); 
+    remove_button = $("<input>", { type: "button", value:"Remove", class: "ui-widget ui-button right" }).appendTo(param_remove_div);
+    $(remove_button).click(function(){$(this).parent().parent().remove(); n--; $(params_div).trigger("change")});
+
+    param_type_div = $("<div>", {id: "param_type"+i, css: { float: 'left' } }).appendTo(param_val_div);
+    $("<label>", { for: "param_name"+i}).text("Value:").appendTo(param_type_div);
+    set_param_to_text = $("<input>", { type: "radio", val: "text", name: "fn_param_types[]["+i+"]", id: "param_type_text"+i, checked: true, css: { display: 'block' } }).appendTo(param_type_div);
+//    param_val_text = $("<input>", { type: "text", name: "fn_param_vals[]", id: "param_val_text"+i, value: val, class: "text ui-widget-content ui-corner-all", css: { 'margin-bottom':'5px', width:'100%' } }).appendTo(param_val_div); 
+    param_val_text = $("<input>", { type: "text", name: "fn_param_vals[]", id: "param_val_text"+i, class: "text ui-widget-content ui-corner-all", css: { 'margin-bottom':'5px', width:'100%' } }).appendTo(param_val_div); 
+
+    set_param_to_node = $("<input>", { type: "radio", val: "node", name: "fn_param_types[]["+i+"]", id: "param_type_node"+i }).appendTo(param_type_div);
+    param_val_node = $("<input>", { type: "hidden", name: "fn_param_vals[]", id: "param_val_node"+i, 'readonly': true, class: "text ui-widget-content ui-corner-all", css: { 'margin-bottom':'5px', width:'100%' } }).appendTo(param_val_div); 
+
+    set_param_to_file = $("<input>", { type: "radio", val: "file", name: "fn_param_types[]["+i+"]", id: "param_type_file"+i }).appendTo(param_type_div);
+    param_val_file = $("<input>", { type: "hidden", name: "fn_param_vals[]", id: "param_val_file"+i, 'readonly': true, class: "text ui-widget-content ui-corner-all", css: { 'margin-bottom':'5px', width:'100%' } }).appendTo(param_val_div); 
+//    $(param_val_file).prop("disabled",true);
+
+    $("<label>", { for: "param_type_text"+i}).text("Input value as text").appendTo(param_type_div);
+    select_node_type_label = $("<label>", { for: "param_type_node"+i}).text("Select node as value").appendTo(param_type_div);
+    select_file_type_label = $("<label>", { for: "param_type_file"+i}).text("Select filename as value").appendTo(param_type_div);
+
+
+    $(param_val_text).attr("type","hidden").prop("disabled",true)
+    $(param_val_node).attr("type","hidden").prop("disabled",true)
+    $(param_val_file).attr("type","hidden").prop("disabled",true)
+    if(type=='text') {
+      param_val = param_val_text
+      set_param_to = set_param_to_text
+    }
+    if(type=='node') {
+      param_val = param_val_node
+      set_param_to = set_param_to_node
+    }
+    $(set_param_to).prop("checked",true);
+    $(param_val).attr("type","text").prop("disabled",false);
+    $(param_val).val(val);
+
+/* move this to click events for file selection elements and stop propogation
+    $(set_param_to_file).click(function() {
+      var index=$(this).parent().parent().parent().data("index");
+      $("#fn_params").data('active_index',index);
+      $("#param_val_text"+index).attr("type","hidden").prop("disabled",true)
+      $("#param_val_node"+index).attr("type","hidden").prop("disabled",true)
+      $("#param_val_file"+index).attr("type","text").prop("disabled",false)
+      $("#files").dialog('open');
+    });
+*/
+    $(select_file_type_label).mousedown(function(e) {
+      var index=$(this).parent().parent().parent().data("index");
+      $("#fn_params").data('active_index',index);
+      $("#files").dialog('open');
+      e.stopPropogation();
+    });
+
+    $(set_param_to_node).click(function() {
+      var index=$(this).parent().parent().parent().data("index");
+      $("#param_val_node"+index).val(get_selected_node());
+      $("#param_val_text"+index).attr("type","hidden").prop("disabled",true)
+      $("#param_val_node"+index).attr("type","text").prop("disabled",false)
+      $("#param_val_file"+index).attr("type","hidden").prop("disabled",true)
+    });
+    $(set_param_to_text).click(function() {
+      var index=$(this).parent().parent().parent().data("index");
+      $("#param_val_node"+index).attr("type","hidden").prop("disabled",true)
+      $("#param_val_text"+index).attr("type","text").prop("disabled",false)
+      $("#param_val_file"+index).attr("type","hidden").prop("disabled",true)
+    });
+    $(set_param_to_text).change(function() {
+      $("#param_val_text"+index).val('');
+    });
+    $(select_node_type_label).mousedown(function(e) {
+      selected_node = get_selected_node()
+//      alert(selected_node)
+//      alert(typeof(selected_node)) #FIXME: why is this necessary for the following test to work?
+      if (typeof(selected_node) == "undefined" | selected_node == '') { // FIXME: is this how to test what I want?
+//      if (typeof(selected_node) == "undefined") { // FIXME: is this how to test what I want?
+        e.stopPropogation();
+        window.location.href="#pipeline";
+      }
+    });
+    $("#param_type"+i).buttonset();
+    i++;
+    n++;
+    $("#params_container").trigger("change")
+  };
+
+  $(document).ready(function(){
+    var posting = $.post("${structure: request.route_url('files')}");
+    posting.done(function(data) {
+      view = $('#files',data).get(0);
+      $("#files", document).replaceWith(view);
+      prepare_files_dialog();
+    });
+
+    $("#params_container").bind("change", function() { if(n>0) { $("#params_container").css('width', '75%');  } else { $("#params_container").css('width', '25%'); } });
+
+    $("#add_param_button").button().click(function() {
+      add_param("","",'text');
+    });
+
+    $("#node_call").change(function() {
+      var url = "${structure: request.route_url('R_fn_params', pipeline_id=pipeline.id)}";
+      var fn=$(this).val();
+      $("#fn_params").empty();
+      n=0; 
+      i=0; //FIXME: does this do what I want?
+      $.ajax({
+        type: "POST",
+        url: url,
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify({'package': 'richest','fn': fn}),
+        success: function(obj){
+          var fn_params = obj['fn_params'];
+          var keys = obj['key_list'];
+          for (var i = 0; i < keys.length; i++) {
+            var val=fn_params[keys[i]];
+            add_param(keys[i],val,'text');
+          }
+        },
+        dataType: "json"
+      });
+      $("#fn_params").trigger("change");
+    });
+
+
+
+    var functions = [],
+        url = "${structure: request.route_url('R_get_fns', pipeline_id=pipeline.id)}";
+    $.ajax({
+      type: "POST",
+      url: url,
+      contentType: "application/json; charset=utf-8",
+      data: JSON.stringify({'package': 'richest'}),
+      success: function(data){
+        $("#node_call").autocomplete({
+          source: data,
+          minLength: 0
+        });
+      },
+      dataType: "json"
+    });
+  });
+  
+  (function($) {
+    $.fn.serializeArrayInputJSON = function() {
+      var o = {};
+      var a = this.serializeArray();
+      $.each(a, function() {
+        if (o[this.name]) {
+          if (!o[this.name].push) {
+            o[this.name] = [o[this.name]];
+          }
+          o[this.name].push(this.value || '');
+        } else {
+           o[this.name] = [this.value || ''];
+        }
+      });
+      return o;
+    };
+  })(jQuery);
+
+  function cancel_form_submit(button) {
+    var form = $(button).closest('form');
+    $(form).closest('div').css('display','none');
+    reload_select_nodes();
+    svgdom = $('svg',document).get(0)
+//    link_nodes_to_select(svgdom);
+    link_nodes_to_select_one(svgdom);
+  }
+
+  function node_form_submit(button) {
+    var form = $(button).closest('form');
+    var v = $(form).data('validator');
+    if (!(v.form())) {
+      return false;
+    }
+    var fn_params = $("#fn_params input").serializeArrayInputJSON();
+    var node_id = form.find( 'input[name="node_id"]' ).val();
+    var node_call = form.find( 'input[name="node_call"]' ).val();
+    var url = $(button).attr('action');
+//    $('body').load(url,JSON.stringify({'node_id': node_id, 'node_call': node_call, 'fn_params': fn_params}))
+    $.ajax({
+      type: "POST",
+      url: url,
+      contentType: "application/json; charset=utf-8",
+      data: JSON.stringify({'node_id': node_id, 'node_call': node_call, 'fn_params': fn_params}),
+      success: function(data){
+/*
+        svgdom = $('svg',data).get(0);
+        $("#pipeline").empty().append( svgdom );
+        reload_select_nodes();
+//        link_nodes_to_select(svgdom);
+        link_nodes_to_select_one(svgdom);
+        $("#add_node_div").attr('hidden', true);
+        $("#node_id").val('');
+        $("#node_call").val('');
+        $("#fn_params").empty();
+        n=0;
+        i=0; //FIXME: does this do what I want?
+*/
+        window.location.href=data.url  
+      },
+      error: function(xhr, status) {
+        xml = xhr.responseText
+        $('body').replaceWith(xml)
+      },
+      dataType: "json"
+    });
+  };
+
+  $(document).ready(function(){
+    var validator = {
+      rules: {
+        node_id: {
+          required: true,
+        },
+        node_call: {
+          required: true,
+        }
+      },
+      messages: {
+        node_id: {
+          required: "You must provide a node identifier",
+        },
+        node_call: {
+          required: "You must enter the name of an R function that will generate data for this node",
+        }
+      },
+      invalidHandler: function(event, validator) {
+//        alert("asdf")
+      },
+      submitHandler: function(form) {
+        return(false);
+      }
+    };
+    var add_validator = $("#add_node_form").validate(validator);
+    $("#add_node_form").data('validator', add_validator);
+    $("#add_node_button").button().click(function() { node_form_submit(this) });
+    $("#cancel_add_node_button").button().click(function() { cancel_form_submit(this) });
+    $("#add_node_buttons").buttonset();
+
+    $("#addnode").button().click(function() {
+        svgdom = $('svg',document).get(0)
+//        reload_select_nodes();
+        link_nodes_to_select_one(svgdom);
+        $('h3', $("#add_node_div")).text('Add node');
+        $("#add_node_div").css('display','block');
+        $("#add_node_buttons").css('display','block');
+        $("#edit_node_buttons").css('display','none');
+        $("#node_id").prop('readonly',false)
+        $("#node_id").val('')
+        window.location.href="#add_node";
+    });
+
+    var edit_validator = $("#edit_node_form").validate(validator);
+    $("#edit_node_form").data('validator', edit_validator);
+    $("#edit_node_button").button().click(function() { node_form_submit(this) });
+    $("#cancel_edit_node_button").button().click(function() { cancel_form_submit(this) });
+    $("#edit_node_buttons").buttonset();
+
+    $("#editnode").mousedown(function(e) {
+      selected_node = get_selected_node()
+//      alert(selected_node)
+//      alert(typeof(selected_node)) //FIXME: why is this necessary for the following test to work?
+      if (typeof(selected_node) == "undefined" | selected_node == '') { // FIXME: is this how to test what I want?
+        alert(selected_node)
+        e.stopPropogation();
+        window.location.href="#pipeline";
+      }
+    });
+
+    $("#editnode").button().click(function() {
+        svgdom = $('svg',document).get(0);
+//        reload_select_nodes();
+//        link_nodes_to_select_one(svgdom);
+//        link_nodes_to_edit_node_form(svgdom);
+        $('h3', $("#add_node_div")).text('Edit node');
+        $("#add_node_div").css('display','block');
+        $("#edit_node_buttons").css('display','block');
+        $("#add_node_buttons").css('display','none');
+        $("#node_id").val(get_selected_node())
+        $("#node_id").prop('readonly',true)
+        var node_id=$("#node_id").val()
+        var url = "${structure: request.route_url('get_node_info', pipeline_id=pipeline.id)}";
+        n=0; 
+        i=0; //FIXME: does this do what I want?
+        $("#fn_params").empty();
+        $.ajax({
+          type: "POST",
+          url: url,
+          contentType: "application/json; charset=utf-8",
+          data: JSON.stringify({'node_id': node_id}),
+          success: function(obj){
+            var node_call = obj['node_call'];
+            var fn_params = obj['fn_params'];
+            var keys = obj['key_list'];
+            for (var i = 0; i < keys.length; i++) {
+              var val=fn_params[keys[i]]['val'];
+              add_param(keys[i],val,fn_params[keys[i]]['type']);
+            }
+            $("#node_call").val(node_call);
+          },
+          dataType: "json"
+        });
+        $("#fn_params").trigger("change");
+//        window.location.href="#edit_node";
+    });
+
+  });
+
+</script>
+</metal:add_node_head>
+
+<metal:add_edit_form_elements define-macro="add_edit_form_elements">
+    <label for="node_call">Function call</label>
+    <input type="text" name="node_call" id="node_call" value="" class="text ui-widget-content ui-corner-all" style="width: 25%">
+    <div id="params_container" style="width: 25%; padding: 0px;" >
+      <fieldset style="border: 1px solid grey; padding: 15px;">
+        <legend>Parameters</legend>
+        <div id="fn_params" style="padding: 0px">
+        </div>
+        <div style="width: 100%">
+          <input type="button" id="add_param_button" class="right" value="Add parameter"> 
+        </div>
+      <fieldset>
+    </div>
+</metal:add_edit_form_elements>
+
+<metal:add_node_form define-macro="add_node_form">
+<div id="add_node_div" title="Add node" style="display: none">
+  <a name="add_node"/>
+  <h3>Add node</h3>
+  <form id="add_node_form" method="post" >
+    <label for="node_id">Identifier</label>
+    <input type="text" name="node_id" id="node_id" class="text ui-widget-content ui-corner-all" style="width: 25%">
+    <tal:block metal:define-slot="form_elements"/>
+    <div id="add_node_buttons" style="margin-top: 10px; width: 100%; align: right;">
+      <button type="button" id="cancel_add_node_button" class="ui-button" style="width: 12%; display: inline">Cancel</button> 
+      <button type="button" id="add_node_button" action="${structure: request.route_url('addnode', pipeline_id=pipeline.id)}" class="ui-button" style="width: 13%; display: inline">Add node</button> 
+    </div>
+    <div id="edit_node_buttons" style="margin-top: 10px; width: 100%; align: right;">
+      <button type="button" id="cancel_edit_node_button" class="ui-button" style="width: 12%; display: inline">Cancel</button> 
+      <button type="button" id="edit_node_button" action="${structure: request.route_url('editnode', pipeline_id=pipeline.id)}" class="ui-button" style="width: 13%; display: inline">Edit node</button> 
+    </div>
+  </form>
+</div>
+</metal:add_node_form>
+
+<metal:addnode_button define-macro="addnode_button">
+<button id="addnode">Add node</button>
+</metal:addnode_button>
+
+
+<metal:editnode_button define-macro="editnode_button">
+<button id="editnode">Edit node</button>
+</metal:editnode_button>

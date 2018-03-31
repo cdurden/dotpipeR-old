@@ -1,0 +1,18 @@
+#pipeline_dir <- "/home/cld/dotpipeR/dot/"
+#library(maptools)
+digraph squash_distribution {
+    squash_distribution_2015a_pipeline [expression="eval.Pipeline(read.Pipeline(paste0(pipeline_dir,'squash_distribution_2015a.dot')),cachedir=cachedir)"]
+    squash_distribution_2015b_pipeline [expression="eval.Pipeline(read.Pipeline(paste0(pipeline_dir,'squash_distribution_2015b.dot')),cachedir=cachedir)"]
+
+    squash_distribution_2015a_pipeline -> squash_points
+    squash_distribution_2015b_pipeline -> squash_points
+    squash_points [expression="spRbind(squash_distribution_2015a_pipeline['squashSpatialPoints2015'],squash_distribution_2015b_pipeline['squashSpatialPoints2015'])"]
+
+    squash_distribution_2015a_pipeline -> pumpkin_points
+    squash_distribution_2015b_pipeline -> pumpkin_points
+    pumpkin_points [expression="spRbind(squash_distribution_2015a_pipeline['pumpkinSpatialPoints2015'],squash_distribution_2015b_pipeline['pumpkinSpatialPoints2015'])"]
+
+    pumpkin_points -> cucurbit_points
+    squash_points -> cucurbit_points
+    cucurbit_points [expression="spRbind(squash_points,pumpkin_points)"]
+}

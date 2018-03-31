@@ -1,0 +1,209 @@
+#library(marray)
+#library(GEOquery)
+#loessConservative <- function(arraydata,filter=matrix(TRUE,nrow(maM(arraydata)),ncol(maM(arraydata)))) {
+#  Mnorm = c()
+#  for(j in 1:ncol(maM(arraydata))) {
+#    x = data.frame(A=maA(arraydata)[filter[,j],j],M=maM(arraydata)[filter[,j],j])
+#    l = loess("M~A",x)
+#    l.pred = predict(l,data.frame(A = maA(arraydata)[,j]))
+#
+#    # for conservative adjustment based on l.pred (which we treat as our A-dependent bias estimate), we want:
+#    # 1. values greater than l.pred, in absolute value, and having the same sign map to: sign(l.pred)*abs(M-l.pred)
+#    # 2. values with sign opposite l.pred (or sign 0) map to: themselves 
+#    # 3. values less than or equal to l.pred, in absolute value, and having the same sign map to: 0 
+#    case1 = sign(l.pred)==sign(maM(arraydata)[,j]) & abs(maM(arraydata)[,j]) > abs(l.pred)
+#    case2 = sign(maM(arraydata)[,j])==-sign(l.pred) | sign(maM(arraydata)[,j])==0
+#    case3 = sign(l.pred)==sign(maM(arraydata)[,j]) & abs(maM(arraydata)[,j]) <= abs(l.pred)
+#
+#    case1[is.na(case1)]=FALSE
+#    case2[is.na(case2)]=FALSE
+#    case3[is.na(case3)]=FALSE
+#
+#    M = maM(arraydata)[,j]
+#    Mnormj = rep(NA,length(l.pred))
+#    #Mnormj = maM(arraydata)[,j]-l.pred # standard transformation
+#    Mnormj[case1] = sign(l.pred[case1])*abs(M[case1]-l.pred[case1])
+#    Mnormj[case2] = M[case2]
+#    Mnormj[case3] = 0
+#    Mnorm = cbind(Mnorm,Mnormj)
+#  }
+#
+#  maM(arraydata) = Mnorm
+#  arraydata
+#}
+#getURL <- function(url) {
+#  temp <- tempfile()
+#  download.file(url, temp, method="wget")
+#  return(temp)
+#}
+
+#referenceDimovaGenesToProbes <- function(annotFileDimova, probes) {
+#  dimova_genes = read.delim(annotFileDimova,as.is=TRUE)
+#  dimova_genes[c(2,6,10,12,18,24,30,35,49,56,61,112,159),1] = c("DNAprim","E2f","CG5250","E2f2","Dp","Rbf","Rbf2","NtR","CG2543","CycE","RfC40","Chd3","sd")
+#  rownames(dimova_genes) = dimova_genes[,1]
+#
+#  dimova_index = sapply(1:nrow(dimova_genes),function(j) {
+#    gene = dimova_genes[j,1]
+#    i = which(probes$GENE_SYMBOL==gene)
+#    if(length(i)==0) {
+#      fbid = dimova_genes[j,2]
+#      i = which(probes$FLYBASE_ID==fbid)
+#    }
+#    return(i)
+#  })
+#  names(dimova_index) = dimova_genes[,1]
+#
+#  unmapped = which(sapply(dimova_index,length)==0)
+#  alt = sapply(unmapped,function(i) { dimova_genes[i,"NAME"] })
+#
+#  altmap = sapply(alt,function(sym) {
+#    i = which(grepl(sym,probes$GENE_SYMBOL))
+#  })
+#
+#  dimova_index[unmapped] = altmap
+#  unmapped = which(sapply(dimova_index,length)==0)
+#
+#  alt = sapply(unmapped,function(i) { dimova_genes[i,"SYMBOL"] })
+#  altmap = sapply(alt,function(sym) {
+#    i = which(grepl(sym,probes$GENE_SYMBOL))
+#    if(length(i)>0) {
+#      print(paste(sym,"matched",probes$GENE_SYMBOL[i]))
+#    }
+#    return(i)
+#  })
+#
+#  altmap
+#  altmap["CG13345"] = c()
+#  dimova_index[unmapped[names(altmap)]] = altmap
+#
+#  unmapped = which(sapply(dimova_index,length)==0)
+#  altmap = list() # go through and manually try to map the unmapped genes
+#
+#  # map DNApol-alpha180
+#  i = sapply(1:ncol(probes),function(j) { which(grepl("DNApol",probes[,j]))})
+#  altmap[[names(unmapped)[1]]] = i[[which(sapply(i,length)>1)[4]]][1]
+#
+#  # map CG13345, FBgn0086356
+#  i = sapply(1:ncol(probes),function(j) { which(grepl("CG13345",probes[,j]))})
+#  altmap[[names(unmapped)[3]]] = i[[5]]
+#
+#  dimova_index[names(altmap)] = altmap
+#
+#  rm(alt,altmap,i)
+#  unmapped = which(sapply(dimova_index,length)==0)
+#  dimova_index
+#}
+#dimovaRegression <- function(arraydata, dimova_table, dimova_map, features) {
+#  dimova_submap <- dimova_map[which(dimova_map[,2] %in% rownames(dimova_table)),]
+#  dimova_submap_rows <- sapply(dimova_submap[,1],function(x) which(features$PROBE_ID==x))
+#  Y = maM(arraydata)[dimova_submap_rows,]
+#  rownames(Y) = dimova_submap[,1]
+#  models = list()
+#  for (j in 1:ncol(Y)) {
+#    subset = !is.na(Y[,j])
+#    data = data.frame(Y=Y[subset,j],dimova_table[dimova_submap[subset,2],])
+#    models[[j]] = lm("Y~0+E2F1+E2F2+DP+RBF1+RBF2+RBF12",data)
+#  }
+#  models
+##  x = sapply(models,function(x) { x$coefficients })
+#}
+#dimovaTable <- function(table1a, table1b, table1c) {
+#  dimova_table1a = read.delim(table1a,as.is=TRUE,row.names=1)
+#  dimova_table1b = read.delim(table1b,as.is=TRUE,row.names=1)
+#  dimova_table1c = read.delim(table1c,as.is=TRUE,row.names=1)
+#
+#  dimova_table = rbind(dimova_table1a,dimova_table1b,dimova_table1c)
+#
+#  rownames(dimova_table)[rownames(dimova_table)=="Sd"]="sd"
+#  rownames(dimova_table)[rownames(dimova_table)=="Ntr"]="NtR"
+#  dimova_table
+#}
+#options("data.path" = "/tmp")
+
+digraph gse19029 {
+  datadir [expression="'/tmp'"]
+  gse19029supp [function=getGEOSuppFiles,GEO="'GSE19029'",makeDirectory=FALSE,baseDir="getOption('data.path')"]
+//  datadir -> gse19029supp
+  files [expression="if (untar(rownames(gse19029supp)[[1]],exdir=getOption('data.path'))==0) untar(rownames(gse19029supp)[[1]],list=TRUE) else error('untar failed')"]
+  gse19029supp -> files
+//  datadir -> files
+
+  gprfiles [expression="grep('.gpr.gz$',files,value=TRUE)"]
+  files -> gprfiles
+  exprs [function="read.GenePix", path="getOption('data.path')"]
+//  datadir -> exprs [name=path]
+  gprfiles -> exprs [name=fnames]
+
+//  FBids [expression="with(maInfo(maGnames(exprs)),regmatches(Name,regexec('FBgn[0-9]+$',Name)))"]
+//  FBids [expression="with(maInfo(maGnames(exprs)),sapply(Name,function(x) { pos = regexpr('FBgn[0-9]+$',x); if(pos==-1) NA else regmatches(x,pos) }))"]
+  
+//  features [expression="read.delim(system.file('extdata', 'v4.3_genelist_L1.1.1.10_master.txt.gz', package='dotpipeR'),skip=30,as.is=TRUE)"]
+  features [expression="read.delim(getURL('https://github.com/imfoo/DimovaData/blob/master/v4.3_genelist_L1.1.1.10_master.txt.gz?raw=true'),skip=30,as.is=TRUE)"]
+
+//  gplfile [function=getGEOfile, GEO="'GPL9528'",baseDir="getOption('data.path')"]
+//  probes [function="read.delim", sep="'\t'", skip=41]
+//  gplfile -> probes [name=file]
+////  datadir -> gplfile
+//
+//  features [expression="merge(maInfo(maGnames(exprs)), probes, by='ID', all.x=TRUE, all.y=FALSE)"]
+//  exprs -> features
+//  probes -> features
+
+  isdmel [expression="matrix(rep(p[,7]=='Drosophila melanogaster',ncol(exprs)),nrow(exprs),ncol(exprs))"]
+  features -> isdmel [name=p]
+  exprs -> isdmel
+  isfinite [expression="is.finite(maM(exprs))"]
+  exprs -> isfinite
+  isanomolyslide2block1 [expression="cbind(FALSE,p$ARRAY_BLOCK==1,FALSE,FALSE,FALSE)"]
+  features -> isanomolyslide2block1 [name=p]
+  isanomolyslide2blocks1to8 [expression="cbind(FALSE,log2(maRb(exprs[,2]))<8.15&p$ARRAY_BLOCK<=8,FALSE,FALSE,FALSE)"]
+  features -> isanomolyslide2blocks1to8 [name=p]
+  exprs -> isanomolyslide2blocks1to8
+  isanomolyslide4 [expression="cbind(FALSE,FALSE,FALSE,log2(maRb(exprs[,4]))>11.5,FALSE)"]
+  exprs -> isanomolyslide4
+  isflagged [expression="maW(exprs) < -50"]
+  exprs -> isflagged 
+
+  mask [expression="isdmel & isfinite & !isanomolyslide2block1 & !isanomolyslide2blocks1to8 & !isanomolyslide4 & !isflagged"]
+  isdmel -> mask
+  isfinite -> mask
+  isanomolyslide2block1 -> mask
+  isanomolyslide2blocks1to8 -> mask
+  isanomolyslide4 -> mask
+  isflagged -> mask
+
+  norm [expression="as(exprs,'marrayNorm')"]
+  exprs -> norm
+  probeavg [expression="maM(norm)<-apply(maM(exprs),2,FUN=function(x) { ave(x, features[,'GENE_SYMBOL'], FUN=function(y) { mean(y,na.rm=TRUE) }) });norm"] // set exprs M values to the average over features with identical GENE_SYMBOLS
+  norm -> probeavg
+  exprs -> probeavg
+  features -> probeavg
+  
+  loessConservative [function="loessConservative"]
+  probeavg -> loessConservative [name=arraydata]
+  mask -> loessConservative [name=filter]
+
+//  dimovaGenesIndex [function=referenceDimovaGenesToProbes, annotFileDimova="getURL('https://github.com/imfoo/DimovaData/raw/master/Dimova_flybase_annotation.txt')"]
+//  features -> dimovaGenesIndex [name=probes]
+//  datadir -> dimovaGenesIndex
+
+  dimovaMap [expression="read.delim(getURL('https://github.com/imfoo/DimovaData/raw/master/Dimova_map.txt'),header=FALSE,as.is=TRUE)"]
+//sapply(names(pipeline['dimovaGenesIndex']),function(n) rbind(n,pipeline['dimovaGenesIndex'][[n]]))
+// a <- data.frame(t(matrix(unlist(sapply(names(pipeline['dimovaGenesIndex']),function(n) if (length(pipeline['dimovaGenesIndex'][[n]]>0)) rbind(n,pipeline['dimovaGenesIndex'][[n]]))),nrow=2)),stringsAsFactors=FALSE)
+// cbind(a[,1],pipeline['features'][a[,2],'PROBE_ID'])
+
+  dimovaTable [expression="read.delim(getURL('https://github.com/imfoo/DimovaData/raw/master/Dimova_table1.txt'),as.is=TRUE,row.names=1)"]
+//  dimovaTable [function="read.delim", file="getURL('https://github.com/imfoo/DimovaData/raw/master/Dimova_table1.txt')","as.is"=TRUE,"row.names"=1]
+//  dimovaTable [function=dimovaTable, table1a="file.path(datadir,'supp_dimova/table1a_formatted.txt')", table1b="file.path(datadir,'supp_dimova/table1b_formatted.txt')", table1c="file.path(datadir,'supp_dimova/table1c_formatted.txt')"]
+//  datadir -> dimovaTable
+
+  dimovaRegression [function=dimovaRegression]
+  loessConservative -> dimovaRegression [name=arraydata]
+  dimovaTable -> dimovaRegression [name=dimova_table]
+  dimovaMap -> dimovaRegression [name=dimova_map]
+  features -> dimovaRegression [name=features]
+  dimovaRegressionResiduals [expression="sapply(models,function(x) { x$residuals })"]
+  dimovaRegression -> dimovaRegressionResiduals [name=models]
+  dimovaRegressionCoefficients [expression="sapply(models,function(x) { x$coefficients })"]
+  dimovaRegression -> dimovaRegressionCoefficients [name=models]
+}

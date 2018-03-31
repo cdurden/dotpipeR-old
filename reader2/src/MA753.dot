@@ -1,0 +1,10 @@
+digraph A {
+  defRetract [file_path="ma753questions", id="defRetract", class="Question"]
+  defCWPair [class="Question", question="Define a CW pair"]
+  exContractPt [class="Question", question="Show that a contractible space has the same homotopy type as a point."]
+  exContractibleSpaceHomotopicMaps [class="Question", question="Show that if a space is contractible then all maps from the space to a path connected space are homotopic."]
+  exPathConnConstMapsHomotopic [class="Question", question="Show that if a space is path connected, then all constant maps into that space are homotopic"]
+  exTorusHtpyEqPinchedTorus [class="Question", question="Is the torus homotopy equivalent to the pinched torus?"]
+  exHtpyTypeTorus [class="Question", question="What is the homotopy type of the torus?"]
+  exPathConnConstMapsHomotopic -> exContractibleSpaceHomotopicMaps
+}

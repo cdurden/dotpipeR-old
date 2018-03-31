@@ -1,0 +1,5 @@
+digraph superpipe {
+  yo [expression="'yo'"]
+  hello_world [function="eval.Pipeline",pipeline="'/home/cld/projects/dotpipelines/hello_world.dot'",cachedir=cachedir]
+  yo -> hello_world [name="hello"]
+}

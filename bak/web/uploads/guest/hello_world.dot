@@ -1,0 +1,7 @@
+digraph helloWorld {
+  a [call=readLines,con="hello.txt"] // comment
+  b [call=c,text="\"world!"]
+  c [call=paste,sep=", "]
+  b->c
+  a->c
+}

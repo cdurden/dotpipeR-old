@@ -1,0 +1,13 @@
+#library(cdlTools)
+#extractCropSpatialPoints <- function(r,rowBufferSize,cellValue) {
+#  nCol <- ncol(r)
+#  cropCells <- ldply(lapply(seq(1,nrow(r),by=rowBufferSize),function(i) { values <- getValues(r,i,rowBufferSize); cells <- which(values==cellValue); data.frame(cropId=values[cells],cell=(i-1)*nCol+cells)}))
+#  spTransform(xyFromCell(object=r,unlist(cropCells['cell']),spatial=TRUE),CRS="+proj=longlat")
+#}
+digraph squash_distribution {
+  cdlRasterList [function=getCDL,x="fips('NC')",year="2010:2015"]
+  cdlSquashSpatialPoints [function=lapply, FUN=extractCropSpatialPoints, rowBufferSize=1000, cellValue=222]
+  cdlRasterList -> cdlSquashSpatialPoints [name=X]
+  cdlPumpkinSpatialPoints [function=lapply, FUN=extractCropSpatialPoints, rowBufferSize=1000, cellValue=229]
+  cdlRasterList -> cdlPumpkinSpatialPoints [name=X]
+}

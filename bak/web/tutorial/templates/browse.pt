@@ -1,0 +1,21 @@
+<div metal:use-macro="view.layout">
+<tal:block metal:fill-slot="head-more">
+<tal:block metal:use-macro="view.macros['jquery']"/>
+<tal:block metal:use-macro="view.macros['jquery-ui']"/>
+<tal:block metal:use-macro="view.macros['jquery-validate']"/>
+<tal:block metal:use-macro="view.create_macros['create_head']"/>
+</tal:block>
+<tal:block metal:fill-slot="nav">
+<tal:block metal:use-macro="view.create_macros['create_form']"/>
+</tal:block>
+    <div metal:fill-slot="content">
+        <h3>My pipelines</h3>
+        <ul>
+            <li tal:repeat="pipeline mypipelines">
+                <a href="${request.route_url('view', pipeline_id=pipeline.id)}">
+                    ${pipeline.name}
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>

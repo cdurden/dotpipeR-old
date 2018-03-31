@@ -1,0 +1,132 @@
+#load_sr22_data <- function(zipfile) {
+#  tmpdir <- tempdir()
+#  unzip(zipfile,exdir=tmpdir)
+#  column_names <- list(FOOD_DES = c("NDB_No", "FdGrp_Cd", "Long_Desc", "Shrt_Desc",
+#    "ComName", "ManufacName", "Survey", "Ref_desc", "Refuse", 
+#    "SciName", "N_Factor", "Pro_Factor", "Fat_Factor", "CHO_Factor"), 
+#    FD_GROUP = c("FdGrp_Cd", "FdGrp_Desc"), NUT_DATA = c("NDB_No", 
+#        "Nutr_No", "Nutr_Val", "Num_Data_Pts", "Std_Error", "Src_Cd", 
+#        "Deriv_Cd", "Ref_NDB_No", "Add_Nutr_Mark", "Num_Studies", 
+#        "Min", "Max", "DF", "Low_EB", "Up_EB", "Stat_cmt", "CC"), 
+#    NUTR_DEF = c("Nutr_No", "Units", "Tagname", "NutrDesc", "Num_Dec", 
+#        "SR_Order"), SRC_CD = c("Src_Cd", "SrcCd_Desc"), DERIV_CD = c("Deriv_Cd", 
+#        "Deriv_Desc"), WEIGHT = c("NDB_No", "Seq", "Amount", 
+#        "Msre_Desc", "Gm_Wgt", "Num_Data_Pts", "Std_Dev"), FOOTNOTE = c("NDB_No", 
+#        "Footnt_No", "Footnt_Typ", "Nutr_No", "Footnt_Txt"), 
+#    DATASRCLN = c("NDB_No", "Nutr_No", "DataSrc_ID"), DATA_SRC = c("DataSrc_ID", 
+#        "Authors", "Title", "Year", "Journal", "Vol_City", "Issue_State", 
+#        "Start_Page", "End_Page"))
+#  foodData = list()
+#  files = c("FOOD_DES", "NUT_DATA", "WEIGHT", "FOOTNOTE", "FD_GROUP", "NUTR_DEF", "SRC_CD", "DERIV_CD", "DATA_SRC", "DATSRCLN")
+#  for (file in files) {
+#    foodData[[file]] = read.table(file.path(tmpdir,paste(file,"txt",sep=".")),sep="^",quote="~")
+#    colnames(foodData[[file]]) = column_names[[file]]
+#  }
+#  foodData
+#}
+#
+#
+#lookup_food_nutrition_data <- function(sr22,pattern) {
+#  index <- grep(pattern,sr22[['FOOD_DES']][,'Long_Desc'])
+#  if(length(index)>1) {
+#    warning("food description pattern matched multiple items")
+#  } 
+#  lapply(index, function(i) {
+#    with(sr22,merge(NUTR_DEF[,c('Nutr_No','NutrDesc','Units')],merge(FOOD_DES[i,c('NDB_No','Shrt_Desc','Long_Desc')],NUT_DATA[,c('Nutr_No','NDB_No','Nutr_Val')],by='NDB_No'),by='Nutr_No'))
+#  })
+#}
+#
+#food_nutr_table <- function(ingredients,sr22) {
+#  Nutr_Nos <- sr22[['NUTR_DEF']][,'Nutr_No']
+#  food_nutr_table <- matrix(NA,nrow=nrow(ingredients),ncol=length(Nutr_Nos))
+#  index <- vector(length=nrow(ingredients))
+#  for (i in 1:nrow(ingredients)) {
+#    matches <- grep(ingredients[i,1],sr22[['FOOD_DES']][,'Shrt_Desc'],ignore.case=TRUE)
+#    if(length(matches)>1) {
+#      warning("food description pattern matched multiple items")
+#    } 
+#    index[i] <- matches[1]
+#    NDB_No <- sr22[['FOOD_DES']][matches[1],'NDB_No']
+##    food_nutr_table[[i]] = with(sr22,c(levels(FOOD_DES[matches[1],'Shrt_Desc'])[FOOD_DES[matches[1],'Shrt_Desc']],sapply(Nutr_Nos,function(id) { val <- NUT_DATA[which(NUT_DATA[,'Nutr_No']==id & NUT_DATA[,'NDB_No']==NDB_No),'Nutr_Val']; if(length(val)==0) {val <- NA}; return(val)  })))
+#    food_nutr_table[i,] = with(sr22,sapply(Nutr_Nos,function(id) { val <- NUT_DATA[which(NUT_DATA[,'Nutr_No']==id & NUT_DATA[,'NDB_No']==NDB_No),'Nutr_Val']; if(length(val)==0) {val <- NA}; return(val)  }))
+#  }
+#  colnames(food_nutr_table) <- levels(sr22[['NUTR_DEF']][,'NutrDesc'])[sr22[['NUTR_DEF']][,'NutrDesc']]
+##  food_nutr_table <- as.data.frame(food_nutr_table)
+##  food_nutr_table[['Shrt_Desc']] <- with(sr22,levels(FOOD_DES[index,"Shrt_Desc"])[FOOD_DES[index,"Shrt_Desc"]])
+#  food_nutr_table
+#}
+#get_foods <- function(sr22) {
+#  with(sr22,FOOD_DES[,c('Shrt_Desc','Long_Desc')])
+#}
+#convertTo100g <- function(x) {
+#  if(is.factor(x)) { x <- levels(x)[x] }
+#  out = vector(length=length(x))
+#  msmts = strsplit(x," ")
+#  conv=list(kg=10,lb=4.53,gal=37.8,cup=2.36,tbsp=0.1475)
+#  for (i in 1:length(msmts)) {
+#    if(msmts[[i]][2] %in% names(conv)) {
+#      out[i] <- conv[[msmts[[i]][2]]]*as.numeric(msmts[[i]][1])
+#    } else {
+#      out[i] <- NA
+#    }
+#  }
+#  out
+#}
+#na.tozero <- function(x) {
+#  x[is.na(x)] <- 0
+#  x
+#}
+#NUTR_DEF_units <- function(sr22) {
+#  with(sr22,NUTR_DEF[,'Units'])
+#}
+#unitize <- function(nutr_sum,units) {
+#  out <- paste(nutr_sum,units)
+#  names(out) <- colnames(nutr_sum)
+#  out
+#}
+#lapply.matrix_mult <- function(x,y) {
+#  out <- list()
+#  for (i in 1:length(x)) {
+#    out[[i]] <- x[[i]]%*%y[[i]]
+#  }
+#  out
+#}
+#lapply.mult <- function(x,y) {
+#  out <- list()
+#  for (i in 1:length(x)) {
+#    out[[i]] <- x[[i]]*y[[i]]
+#  }
+#  out
+#}
+
+digraph diet_analysis {
+  sr22 [function="load_sr22_data", zipfile="'sr22.ZIP'"]
+  meal_schedule [function="read.delim", sep="';'", file="'meal_schedule.txt'",header=FALSE,stringsAsFactors=FALSE]
+  dishes [expression="x[[1]]"]
+  meal_schedule -> dishes [name=x]
+  ingredients [function="lapply",FUN="'read.delim'",sep="';'",header=FALSE]
+  dishes -> ingredients [name=X]
+//  ingredients [function="read.delim", sep="';'", file="'IB_kitchen.txt'",header=FALSE]
+  ingredient_quantities [function="lapply",FUN="'[['",i=2]
+  ingredients -> ingredient_quantities [name="X"]
+  ingredient_quantities_100gram_portions [function="lapply",FUN="convertTo100g"]
+  ingredient_quantities -> ingredient_quantities_100gram_portions [name=X]
+  sr22_foods [function=get_foods]
+  sr22 -> sr22_foods [name="sr22"]
+  food_nutr_table [function="lapply",FUN="food_nutr_table"]
+  ingredients -> food_nutr_table [name=X]
+  sr22 -> food_nutr_table [name=sr22]
+  food_nutr_table_na2zero [function="lapply",FUN="na.tozero"]
+  food_nutr_table -> food_nutr_table_na2zero [name=X]
+  nutr_sum [function="lapply.matrix_mult"]
+  ingredient_quantities_100gram_portions -> nutr_sum [name=x]
+  food_nutr_table_na2zero -> nutr_sum [name=y]
+  nutr_units [function=NUTR_DEF_units]
+  sr22 -> nutr_units [name=sr22]
+//  nutr_sum_units [function="paste"]
+//  nutr_sum -> nutr_sum_units [name=x]
+//  nutr_units -> nutr_sum_units [name=y]
+  nutr_sum_units [function="unitize"]
+  nutr_sum -> nutr_sum_units [name=nutr_sum]
+  nutr_units -> nutr_sum_units [name=units]
+}

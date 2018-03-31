@@ -1,0 +1,13 @@
+pyramid
+sqlalchemy
+pyramid_chameleon
+zope.sqlalchemy
+pyramid_tm
+pyramid_authstack
+markdown
+pygments
+networkx
+pydotreader
+pygraphviz
+graphviz
+rpy2

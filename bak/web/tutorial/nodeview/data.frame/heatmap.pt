@@ -1,0 +1,28 @@
+        <tal:block define="global max_rows 100"/>
+        <tal:block define="unfactor python: r('unfactor')">
+        <tal:block define="node_data python: unfactor(node.data)">
+        <p tal:condition="python: node_data.nrow > max_rows">The data table has been truncated to <span tal:content="max_rows">100</span> lines</p>
+        <table tal:condition="python: node_class == 'data.frame'">
+        <tr tal:condition="python: node.data.colnames != NULL">
+            <tal:block condition="python: node.data.rownames != NULL">
+            <th/>
+            </tal:block>
+            <th tal:repeat="j python: range(1,node.data.ncol+1)" tal:content="python: node.data.colnames[j-1]">col_j</th>
+        </tr>
+        <tr tal:repeat="i python: range(1,min(max_rows,node_data.nrow)+1)">
+            <th tal:condition="python: node_data.rownames != NULL" tal:content="python: node_data.rownames[i-1]">row_i</th>
+            <td tal:repeat="j python: range(1,node_data.ncol+1)" tal:content="python: node_data.rx(i,j)[0]">
+             0
+            </td> 
+        </tr>
+        </table>
+        </tal:block>
+        </tal:block>
+
+        <div tal:condition="python: node.graphics_data is not None">
+        <tal:block repeat="graphics_elmt python: node.graphics_data">
+            <div tal:condition="python: graphics_elmt['format'] == 'png'">
+                 <img tal:attributes="src python: graphics_elmt['href']"/>
+            </div> 
+        </tal:block>
+        </div>

@@ -1,0 +1,21 @@
+#require(raster)
+#hwsddir <- "/home/cld/squash_bee_data/soil/hwsd/"
+#hwsdbuildsp <- function(r, df, fields) {
+#  sp <- as(r, "SpatialGridDataFrame")
+#  m <- match(sp@data$hwsd, df$MU_GLOBAL)
+#  sp@data <- df[m, fields]
+#  sp
+#}
+//based on http://www.css.cornell.edu/faculty/dgr2/teach/R/R_HWSD.pdf
+digraph ssurgo {
+  hwsd [function=raster, x="paste0(hwsddir,'/','HWSD_RASTER/hwsd.bil')", crs="CRS('+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0')"]
+  bbox1 [expression="extent(-125,-68,15,50)"]
+  hwsd -> hwsdNA [name=x]
+  bbox1 -> hwsdNA [name=y]
+  hwsdNA [function=crop]
+  hwsdNAtable [function="read.csv",file="paste0(hwsddir,'/HWSD_NA.csv')","row.names"=1]
+  hwsdNA -> hwsdNAsp [name=r]
+  hwsdNAtable -> hwsdNAsp [name=df]
+  hwsdNAsp [function="hwsdbuildsp", fields="c('T_SAND','T_SILT')"]
+//  hwsd_raster <- brick(hwsd.box.sp)
+}

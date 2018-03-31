@@ -1,0 +1,7 @@
+strict digraph G {
+hello_world [function=paste, sep="', '"];
+hello [con="'Hello'", function=c];
+world [function=c, text="'world!'"];
+hello -> hello_world;
+world -> hello_world;
+}
