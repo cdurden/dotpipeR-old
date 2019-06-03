@@ -68,7 +68,8 @@ os.environ['R_HOME'] = settings.r_home
 from rpy2.robjects import r
 from rpy2.robjects.vectors import ListVector
 from rpy2.rinterface import NULL
-from rpy2.rinterface import RRuntimeError 
+#from rpy2.rinterface import RRuntimeError 
+from rpy2.rinterface_lib.embedded import RRuntimeError
 
 
 from urllib import parse as urlparse
