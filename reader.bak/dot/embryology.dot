@@ -1,6 +1,0 @@
-graph embryo {
-  notochord [description="rod-shaped body found in the embryos of all chordates"]
-  neuraltube
-  notochord -- neuraltube
-  
-}

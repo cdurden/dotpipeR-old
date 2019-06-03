@@ -1,5 +1,0 @@
-graph gse19029 {
-  rawdata0 [call="loadGenepix",targetsfile="/var/lib/cld-data/arrays/brian/GSE19029/targets.txt", probesfile="/var/lib/cld-data/arrays/brian/GSE19029/v4.3_genelist_L1.1.1.10_master.txt"]
-  MA [call=as,Class="MAList"]
-  rawdata0 -> MA
-}
