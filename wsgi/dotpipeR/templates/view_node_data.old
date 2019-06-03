@@ -1,0 +1,89 @@
+<div metal:use-macro="view.layout">
+<tal:block metal:fill-slot="head-more">
+<script metal:use-macro="view.macros['jquery']"></script>
+<script metal:use-macro="view.macros['jquery-ui']"></script>
+<script>
+$(function() {
+    $("#change_view_method_button").button().click(function() {
+      
+      var url = "${structure: request.route_url('view_node_data',pipeline_id=pipeline.id,node=node.node)}",
+          view_method = $("#change_view_method option:selected").attr("value");
+      var posting = $.post( url, { 'view_method' : view_method });
+      posting.done(function( data ) {
+            view = $('#content',data).get(0);
+            alert(view)
+            $("#content", document).load(view);
+//            $("#content", document).replaceWith(view);
+//        $("body").load(data);
+//            window.location.href = url;
+      });
+
+    });
+});
+</script>
+</tal:block>
+    <div metal:fill-slot="nav">
+        <form action="${structure: request.route_url('view_node_data',pipeline_id=pipeline.id,node=node.node)}" method="POST" id="change_view_method">
+          <label for="view_method">Display method</label>
+          <select name="view_method">
+            <tal:block repeat="view_method python: view_methods">
+            <option tal:condition="python: view_method==selected_view_method" tal:attributes="value view_method" tal:content="view_method" selected></option>
+            <option tal:condition="python: view_method!=selected_view_method" tal:attributes="value view_method" tal:content="view_method"></option>
+            </tal:block>
+          </select>
+        <input type="submit" id="change_view_method_button" value="Refresh"></input>
+        </form>
+    </div>
+    <div metal:fill-slot="content">
+        Node class: ${structure: node_class} <br/>
+<!--        <button type="submit" id="change_view_method_button">Change view method</button>-->
+
+        <table tal:condition="python: node_class == 'matrix'">
+        <tr tal:condition="python: node.data.colnames != NULL">
+            <tal:block condition="python: node.data.rownames != NULL">
+            <th/>
+            </tal:block>
+            <th tal:repeat="j python: range(1,node.data.ncol+1)" tal:content="python: node.data.colnames[j-1]">col_j</th>
+        </tr>
+        <tr tal:repeat="i python: range(1,node.data.nrow+1)">
+            <th tal:condition="python: node.data.rownames != NULL" tal:content="python: node.data.rownames[i-1]">row_i</th>
+            <td tal:repeat="j python: range(1,node.data.ncol+1)" tal:content="python: node.data.rx(i,j)[0]">
+             0
+            </td> 
+        </tr>
+        </table>
+
+        <table tal:condition="python: node_class == 'data.frame'">
+        <tr tal:condition="python: node.data.colnames != NULL">
+            <tal:block condition="python: node.data.rownames != NULL">
+            <th/>
+            </tal:block>
+            <th tal:repeat="j python: range(1,node.data.ncol+1)" tal:content="python: node.data.colnames[j-1]">col_j</th>
+        </tr>
+        <tr tal:repeat="i python: range(1,node.data.nrow+1)">
+            <th tal:condition="python: node.data.rownames != NULL" tal:content="python: node.data.rownames[i-1]">row_i</th>
+            <td tal:repeat="j python: range(1,node.data.ncol+1)" tal:content="python: node.data.rx(i,j)[0]">
+             0
+            </td> 
+        </tr>
+        </table>
+<!--
+        <p tal:condition="python: node.class == 'matrix'" tal:content="python: node.data[0]">message goes here</p>
+
+        <div tal:condition="python: node.class == 'data.frame'">
+        <tal:block repeat="i python: node.data.colnames">
+            <div tal:repeat="j python: node.data.rx(repeat/i/number)">
+                 <div tal:content="python: node.data.rx(repeat/i/number)[repeat/j/index]">none</div>
+            </div> 
+        </tal:block>
+        </div>
+-->
+        <div tal:condition="python: node.graphics_data is not None">
+        <tal:block repeat="graphics_elmt python: node.graphics_data">
+            <div tal:condition="python: graphics_elmt['format'] == 'png'">
+                 <img tal:attributes="src python: graphics_elmt['href']"/>
+            </div> 
+        </tal:block>
+        </div>
+    </div>
+</div> 

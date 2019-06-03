@@ -17,12 +17,12 @@ requires = [
 #    'matplotlib'
 ]
 
-setup(name='dotpipeRwsgi',
+setup(name='dotpipeR',
       install_requires=requires,
       entry_points="""\
       [paste.app_factory]
-      main = dotpipeRwsgi:main
+      main = dotpipeR:main
       [console_scripts]
-      initialize_dotpipeRwsgi_db = dotpipeRwsgi.scripts.initializedb:main
+      initialize_dotpipeR_db = dotpipeR.scripts.initializedb:main
       """,
 )

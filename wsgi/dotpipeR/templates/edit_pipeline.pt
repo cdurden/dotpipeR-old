@@ -1,0 +1,47 @@
+<div metal:use-macro="view.layout">
+  <tal:block metal:fill-slot="head-more">
+    <script metal:use-macro="view.macros['jquery']"></script>
+    <script metal:use-macro="view.macros['jquery-ui']"></script>
+    <script metal:use-macro="view.macros['jquery-validate']"></script>
+    <script metal:use-macro="view.pipeline_macros['jquery_show_svg']"></script>
+    <script metal:use-macro="view.pipeline_macros['jquery_link_nodes_to_select']"></script>
+    <script metal:use-macro="view.pipeline_macros['jquery_reload_select_nodes']"></script>
+  
+    <tal:block metal:use-macro="view.files_macros['select_file_head']"/>
+    <tal:block metal:use-macro="view.addnode_macros['add_node_head']"/>
+    <tal:block metal:use-macro="view.simple_edit_fns_macros['rm_nodes_head']"/>
+    <tal:block metal:use-macro="view.pipe_macros['pipe_from_head']"/>
+    <tal:block metal:use-macro="view.simple_edit_fns_macros['discard_head']"/>
+    <tal:block metal:use-macro="view.simple_edit_fns_macros['save_head']"/>
+  </tal:block>
+  <tal:block metal:fill-slot="loginout">
+    <a tal:condition="context.logged_in is not None" href="${request.application_url}/logout">Logout</a>
+    <a tal:condition="context.logged_in is None" href="${request.application_url}/login">Log In</a>
+  </tal:block>
+
+  <tal:block metal:fill-slot="nav">
+    <tal:block metal:use-macro="view.addnode_macros['addnode_button']"/>
+    <tal:block metal:use-macro="view.addnode_macros['editnode_button']"/>
+    <tal:block metal:use-macro="view.simple_edit_fns_macros['rm_nodes_button']"/>
+    <tal:block metal:use-macro="view.pipe_macros['pipe_form']"/>
+    <tal:block metal:use-macro="view.simple_edit_fns_macros['discard_button']"/>
+    <tal:block metal:use-macro="view.simple_edit_fns_macros['save_button']"/>
+    <br/>
+    <a href="${structure: request.route_url('view',pipeline_id=pipeline.id)}">View pipeline graph</a>
+  </tal:block>
+  <tal:block metal:fill-slot="content">
+    <form id="select_nodes">
+    <tal:block metal:use-macro="view.pipeline_macros['select_nodes']"/>
+    </form>
+    <div id="pipeline">
+      <a name="pipeline"></a>
+    </div>
+    <div id="files">
+    </div>
+    <tal:block metal:use-macro="view.addnode_macros['add_node_form']">
+      <tal:block metal:fill-slot="form_elements">
+        <tal:block metal:use-macro="view.addnode_macros['add_edit_form_elements']"/>
+      </tal:block>
+    </tal:block>
+  </tal:block>
+</div>

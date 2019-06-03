@@ -1,0 +1,28 @@
+<div metal:use-macro="view.layout">
+<tal:block metal:fill-slot="head-more">
+  <script type="text/javascript"
+    src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js">
+  </script>
+</tal:block>
+    <div metal:fill-slot="content">
+        <h4>Login</h4>
+        <span tal:replace="message"/>
+
+        <form action="${structure: request.route_url('login')}" method="post">
+            <input type="hidden" name="came_from"
+                   value="${came_from}"/>
+            <label for="login">Username</label>
+            <input type="text" id="login"
+                   name="login"
+                   value="${login}"/><br/>
+            <label for="password">Password</label>
+            <input type="password" id="password"
+                   name="password"
+                   value="${password}"/><br/>
+            <input type="submit" name="form.submitted"
+                   value="Log In"/>
+        </form>
+
+
+    </div>
+</div>

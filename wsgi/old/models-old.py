@@ -248,7 +248,7 @@ class NodeData(object):
                 for j in range(0,len(graphics_elmt)):
                     name = list(graphics_elmt.names)[j]
                     self.graphics_data[i][name] = graphics_elmt.rx2(j+1)[0]
-                self.graphics_data[i]['href'] = context.request.static_url('dotpipeRwsgi:'+urljoin('static/tmp/',os.path.basename(self.graphics_data[i]['file']))) # FIXME: this could break
+                self.graphics_data[i]['href'] = context.request.static_url('dotpipeR:'+urljoin('static/tmp/',os.path.basename(self.graphics_data[i]['file']))) # FIXME: this could break
         nodeview.graphics_data = self.graphics_data 
         R_as = r('as')
         print("rendering node view template")
@@ -366,7 +366,7 @@ class Dot(object):
             self.dot.write(path,prog="dot",format="svg")
         except pydot.InvocationException as e:
             raise(DotRenderError(e.value))
-        return(request.static_url('dotpipeRwsgi:'+os.path.join('static','tmp',os.path.split(path)[1])))
+        return(request.static_url('dotpipeR:'+os.path.join('static','tmp',os.path.split(path)[1])))
 
     def add_node(self, node_id):
         n = Node(node_id)

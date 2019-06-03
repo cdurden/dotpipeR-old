@@ -1,0 +1,64 @@
+<metal:jquery_mouseover_nodes_to_notes define-macro="jquery_mouseover_nodes_to_notes">
+<script language="javascript" type="text/javascript">
+  function setup_node_cluetips(svgdom) {
+    $("a.cluetip_link").each(function() {
+      $(this).cluetip({local: true, cursor: 'pointer'});
+/*     node = $(this).attr("name");
+      vertex = $('#'+node,svgdom).find("text");
+      $(this).dialog({
+        autoOpen: false, modal: false, overflow: 'auto',
+        buttons: {
+        "Close": function() {
+          $(this).dialog("close");
+        }
+        },
+        position: { my: "left top", at: "right bottom", of: vertex },
+        close: function() {
+        }
+      });
+*/
+    });
+
+  }
+
+function mouseover_nodes_to_notes(svgdom){
+  $(".node",svgdom).each(function() {
+    var node_id = $(this).attr("id");
+    $(this).children("a").attr("rel",'#'+node_id+'_notes');
+    $(this).children("a").cluetip({sticky: true, arrows: true, local: true, cursor: 'pointer', cluetipClass: 'rounded', showTitle: false, mouseOutClose: true,
+      onActivate: function(e) {
+        var cb = $('#cb')[0];
+        return !cb || cb.checked;
+      }
+    });
+/*    $(this).children("a").mouseover( function() {
+      $(".node_notes").dialog("close");
+      node = $(this).parent();
+      node_id = node.attr("id");
+      $('#'+node_id+'_notes').dialog("open");
+    })
+*/
+  }); 
+
+}
+</script>
+</metal:jquery_mouseover_nodes_to_notes>
+
+
+<metal:notes define-macro="notes">
+<tal:block repeat="node_obj python: dot.get_nodes()">
+<tal:block define="node python:node_obj.get_name()">
+
+<div class="node_notes" tal:attributes="id python:node+'_notes';title python:node;name python:node" style="display:none;">
+<div tal:condition="python: node in dot.annotations.keys()" tal:repeat="j python: range(0,len(dot.annotations[node]))" class="note" tal:attributes="id python:node+'_note'+str(j);title python:node">
+<tal:block define="note python:dot.annotations[node][j]">
+  ${structure: note.html()}
+</tal:block>
+</div>
+<div style="float:right;">
+<a href="${request.route_url('notes',pipeline_id=pipeline.id,node=node)}">Add or edit notes for this node</a>
+</div>
+</div>
+</tal:block>
+</tal:block>
+</metal:notes>

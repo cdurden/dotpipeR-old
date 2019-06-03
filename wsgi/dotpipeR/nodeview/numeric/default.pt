@@ -1,0 +1,10 @@
+
+        <p tal:repeat="i python: range(1,len(list(node.data))+1)" tal:content="python: node.data.rx(i)[0]"> 0 </p> 
+
+        <div tal:condition="python: node.graphics_data is not None">
+        <tal:block repeat="graphics_elmt python: node.graphics_data">
+            <div tal:condition="python: graphics_elmt['format'] == 'png'">
+                 <img tal:attributes="src python: graphics_elmt['href']"/>
+            </div> 
+        </tal:block>
+        </div>
