@@ -15,12 +15,13 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-setClass("Pipeline", contains='graphNEL', representation("graphNEL", env='environment', dot='list',preprocessor_lines='character',live='list'), prototype=list(new("graphNEL",edgemode="directed"),env=environment(),preprocessor_lines=character(),live=list()))
-setMethod("initialize", "Pipeline", function(.Object,env=new.env(),preprocessor_lines=character(),...) {
+setClass("Pipeline", contains='graphNEL', representation("graphNEL", env='environment', dot='list',preprocessor_lines='character',dot_file='character',live='list'), prototype=list(new("graphNEL",edgemode="directed"),env=environment(),preprocessor_lines=character(),live=list()))
+setMethod("initialize", "Pipeline", function(.Object,env=new.env(),preprocessor_lines=character(),dot_file=character(),...) {
   .Object <- callNextMethod(.Object,edgemode="directed",...)
   .local <- function(.Object, env = new.env(), preprocessor_lines = character(), ...) {
     .Object@env = env 
     .Object@preprocessor_lines = preprocessor_lines
+    .Object@dot_file = dot_file
     .Object = resetLiveFlags(.Object)
     .Object
   }

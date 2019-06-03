@@ -59,7 +59,8 @@ read.Pipeline <- function(dot_file) {
   p = as(g,"Pipeline")
   p@preprocessor_lines <- preprocessor_lines
   p@dot <- dot
-  attr(p,"dot_file") <- dot_file
+  p@dot_file <- dot_file
+  #attr(p,"dot_file") <- dot_file
   p <- resetLiveFlags(p)
 #  attr(p,"dot_data") <- dot
   return(p)
