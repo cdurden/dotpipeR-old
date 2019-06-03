@@ -228,7 +228,7 @@ class NonPipelineViews(App):
                 data = input_file.read(2<<16)
                 f.write(data)
                 f.close()
-            os.rename(temp_file_path, file_path)
+            shutil.move(temp_file_path, file_path)
 
     
         # Finally write the data to a temporary file
